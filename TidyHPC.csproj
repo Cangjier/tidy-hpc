@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>TidyHPC</PackageId>
+    <Version>1.0.7</Version>
+    <Authors>李东明</Authors>
+    <Description>目标是高性能库</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Platforms>AnyCPU;x64</Platforms>
+    <BaseOutputPath>$([System.IO.Path]::GetTempPath())Temp\$(MSBuildProjectName)\$(Configuration)\$(Platform)\bin\</BaseOutputPath>
+    <IntermediateOutputPath>$([System.IO.Path]::GetTempPath())Temp\$(MSBuildProjectName)\$(Configuration)\$(Platform)\obj\</IntermediateOutputPath>
+  </PropertyGroup>
+</Project>
