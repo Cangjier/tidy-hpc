@@ -3,7 +3,7 @@ using TidyHPC.LiteDB.Arrays;
 using TidyHPC.LiteDB.BasicValues;
 using TidyHPC.LiteDB.Caches;
 using TidyHPC.LiteDB.DBTypes;
-using TidyHPC.LiteDB.Debug;
+using TidyHPC.LiteDB.Debuggers;
 using TidyHPC.LiteDB.Dictionarys;
 using TidyHPC.LiteDB.Hashes;
 using TidyHPC.LiteDB.HashSets;
@@ -93,7 +93,7 @@ public class Database
     /// <summary>
     /// 调试器
     /// </summary>
-    public Debuger Debuger { get; private set; } = null!;
+    public Debugger Debuger { get; private set; } = null!;
 
     #region 信号量
     internal ReaderWriterSemaphorePoolArray<long> SemaphorePoolForAddress { get; } = new(Environment.ProcessorCount * 2, 8);
