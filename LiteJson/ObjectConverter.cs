@@ -1,5 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using System.Text.Json;
+using System.Text;
+using System.Diagnostics;
 
 namespace TidyHPC.LiteJson;
 
@@ -155,6 +157,10 @@ public class UnsupportedConverter : JsonConverter<object>
         {
             return true;
         }
+        else if (typeToConvert == typeof(Encoding)||typeToConvert==typeof(Process))
+        {
+            return true;
+        }
         return false;
     }
 
@@ -219,6 +225,26 @@ public class UnsupportedConverter : JsonConverter<object>
         else if(value is Enum enumValue)
         {
             writer.WriteStringValue(enumValue.ToString());
+        }
+        else if (value is Encoding encoding)
+        {
+            writer.WriteStringValue(encoding.WebName);
+        }
+        else if(value is Process valueProcess)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("ProcessName", valueProcess.ProcessName);
+            writer.WriteNumber("Id", valueProcess.Id);
+            try
+            {
+                writer.WriteNumber("TotalProcessorTime", valueProcess.TotalProcessorTime.TotalMilliseconds);
+                writer.WriteNumber("WorkingSet64", valueProcess.WorkingSet64);
+            }
+            catch
+            {
+
+            }
+            writer.WriteEndObject();
         }
         else
         {

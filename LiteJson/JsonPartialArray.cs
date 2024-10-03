@@ -47,15 +47,29 @@ public partial struct Json
     /// <exception cref="Exception"></exception>
     public readonly Json Get(int index)
     {
-        AssertArray();
-        var array = AsArray;
-        if (index < 0 || index >= array.Count)
+        if (IsArray)
         {
-            throw new Exception($"Index out of range: {index}, {ToString()}");
+            var array = AsArray;
+            if (index < 0 || index >= array.Count)
+            {
+                throw new Exception($"Index out of range: {index}, {ToString()}");
+            }
+            return new(array[index]);
         }
-        return new(array[index]);
+        else if (IsString)
+        {
+            var stringValue = AsString;
+            if (index < 0 || index >= stringValue.Length)
+            {
+                throw new Exception($"Index out of range: {index}, {ToString()}");
+            }
+            return new(stringValue[index]);
+        }
+        else
+        {
+            throw new Exception($"Unsupported type:{GetValueKind()}");
+        }
     }
-
     /// <summary>
     /// Get the value by index, if not exist, create it
     /// </summary>

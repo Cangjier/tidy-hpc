@@ -45,12 +45,13 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
         }
         else if (Node is JsonNode jsonNode) return jsonNode.GetValueKind();
         else if (Node is string) return JsonValueKind.String;
+        else if (Node is char) return JsonValueKind.String;
         else if (Node is JsonElement jsonElement) return jsonElement.ValueKind;
         else if (Node is IDictionary) return JsonValueKind.Object;
         else if (Node is IEnumerable) return JsonValueKind.Array;
         else if (Node is Array) return JsonValueKind.Array;
-        else if (Node is int || Node is long || Node is short || Node is byte 
-            || Node is sbyte || Node is uint || Node is ulong || Node is ushort 
+        else if (Node is int || Node is long || Node is short || Node is byte
+            || Node is sbyte || Node is uint || Node is ulong || Node is ushort
             || Node is float || Node is double || Node is decimal) return JsonValueKind.Number;
         else if (Node is true) return JsonValueKind.True;
         else if (Node is false) return JsonValueKind.False;

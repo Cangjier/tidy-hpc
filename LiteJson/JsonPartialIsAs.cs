@@ -46,6 +46,7 @@ public partial struct Json
         {
             if (Node is JsonNode jsonNode) return jsonNode.GetValue<string>();
             else if (Node is string nodeString) return nodeString;
+            else if (Node is char nodeChar) return nodeChar.ToString();
             throw new Exception("Can't convert to string");
         }
     }
