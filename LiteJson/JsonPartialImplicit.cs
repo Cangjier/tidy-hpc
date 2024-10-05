@@ -378,6 +378,27 @@ public partial struct Json
         {
             return value.ToArray(item => item.ToInt32);
         }
+        else if (toType.IsGenericType&& toType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+        {
+            var genericType = toType.GetGenericArguments();
+            var result = Activator.CreateInstance(toType);
+            foreach (var item in value.AsObject)
+            {
+                if(item.Value is bool valueBoolean)
+                {
+                    var key = Convert.ChangeType(item.Key, genericType[0]);
+                    var val = Convert.ChangeType(valueBoolean ? "true" : "false", genericType[1]);
+                    toType.GetMethod("Add")?.Invoke(result, [key, val]);
+                }
+                else
+                {
+                    var key = Convert.ChangeType(item.Key, genericType[0]);
+                    var val = Convert.ChangeType(item.Value, genericType[1]);
+                    toType.GetMethod("Add")?.Invoke(result, [key, val]);
+                }
+            }
+            return result;
+        }
         else return value.Node;
     }
     #endregion
