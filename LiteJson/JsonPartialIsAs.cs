@@ -102,7 +102,14 @@ public partial struct Json
             else if (Node is float nodeFloat) return nodeFloat;
             else if (Node is decimal nodeDecimal) return (double)nodeDecimal;
             else if (Node is byte nodeByte) return nodeByte;
-            else throw new Exception("Can't convert to number");
+            else if (Node is short nodeShort) return nodeShort;
+            else if (Node is sbyte nodeSByte) return nodeSByte;
+            else if (Node is ushort nodeUShort) return nodeUShort;
+            else if (Node is uint nodeUInt) return nodeUInt;
+            else if (Node is ulong nodeULong) return nodeULong;
+            else if (Node is string nodeString) return double.Parse(nodeString);
+            else if (Node is char nodeChar) return nodeChar;
+            else throw new Exception($"Can't convert to number, {Node?.GetType()}");
         }
     }
 

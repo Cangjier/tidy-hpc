@@ -417,5 +417,37 @@ public partial struct Json
     /// </summary>
     /// <param name="onSort"></param>
     public void Sort(Func<Json, Json, int> onSort) => AssertArray(self => self.Sort(onSort));
+
+    /// <summary>
+    /// 粘接
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="count"></param>
+    /// <param name="items"></param>
+    public Json Splice(int start, int count, params Json[] items)
+    {
+        List<object?>? result = null;
+        AssertArray(self =>
+        {
+            result = self.Splice(start, count, items);
+        });
+        return new(result);
+    }
+
+    /// <summary>
+    /// 切片
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <returns></returns>
+    public Json Slice(int start, int end)
+    {
+        List<object?>? result = null;
+        AssertArray(self =>
+        {
+            result = self.Slice(start, end);
+        });
+        return new(result);
+    }
     #endregion
 }

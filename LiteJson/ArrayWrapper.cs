@@ -265,6 +265,88 @@ public struct ArrayWrapper(object? target):IDisposable,IEnumerable<object?>
     }
 
     /// <summary>
+    /// 粘接
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="deleteCount"></param>
+    /// <param name="items"></param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public List<object?> Splice(int start, int deleteCount, params Json[] items)
+    {
+        if (Target is List<object?> listObjects)
+        {
+            List<object?> result = listObjects.GetRange(start, deleteCount);
+            listObjects.RemoveRange(start, deleteCount);
+            listObjects.InsertRange(start, items.Select(item=>item.Node));
+            return result;
+        }
+        else if (Target is IList list)
+        {
+            List<object?> result = [];
+            for (int i = 0; i < deleteCount; i++)
+            {
+                result.Add(list[start]);
+                list.RemoveAt(start);
+            }
+            for (int i = 0; i < items.Length; i++)
+            {
+                list.Insert(start + i, items[i].Node);
+            }
+            return result;
+        }
+        else
+        {
+            throw new InvalidOperationException("ArrayWrapper: splice only support list type");
+        }
+    }
+
+    /// <summary>
+    /// 切片
+    /// </summary>
+    /// <param name="start"></param>
+    /// <param name="end"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public List<object?> Slice(int start, int end)
+    {
+        if (Target is List<object?> listObjects)
+        {
+            return listObjects.GetRange(start, end - start);
+        }
+        else if (Target is IList list)
+        {
+            List<object?> result = [];
+            for (int i = start; i < end; i++)
+            {
+                result.Add(list[i]);
+            }
+            return result;
+        }
+        else if(Target is Array array)
+        {
+            List<object?> result = [];
+            for (int i = start; i < end; i++)
+            {
+                result.Add(array.GetValue(i));
+            }
+            return result;
+        }
+        else if (Target is JsonArray jsonArray)
+        {
+            List<object?> result = [];
+            for (int i = start; i < end; i++)
+            {
+                result.Add(jsonArray[i]);
+            }
+            return result;
+        }
+        else
+        {
+            throw new InvalidOperationException("ArrayWrapper: slice only support list type");
+        }
+    }
+
+    /// <summary>
     /// Implicit convert json to array wrapper
     /// </summary>
     /// <param name="target"></param>

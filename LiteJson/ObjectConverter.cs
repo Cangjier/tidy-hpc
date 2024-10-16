@@ -161,6 +161,10 @@ public class UnsupportedConverter : JsonConverter<object>
         {
             return true;
         }
+        else if (typeToConvert.BaseType == typeof(MulticastDelegate))
+        {
+            return true;
+        }
         return false;
     }
 
@@ -187,9 +191,11 @@ public class UnsupportedConverter : JsonConverter<object>
     {
         if (value is Type type)
             writer.WriteStringValue(type.FullName);
+        else if (value is MulticastDelegate delegateValue)
+            writer.WriteStringValue("[method]");
         else if (value is Json json)
             JsonSerializer.Serialize(writer, json.Node, options);
-        else if(value is System.Reflection.MemberInfo member)
+        else if (value is System.Reflection.MemberInfo member)
         {
             writer.WriteStartObject();
             writer.WriteString("Name", member.Name);
@@ -200,17 +206,17 @@ public class UnsupportedConverter : JsonConverter<object>
                 var field = (System.Reflection.FieldInfo)member;
                 writer.WriteString("FieldType", field.FieldType.FullName);
             }
-            else if(member.MemberType == System.Reflection.MemberTypes.Property)
+            else if (member.MemberType == System.Reflection.MemberTypes.Property)
             {
                 var property = (System.Reflection.PropertyInfo)member;
                 writer.WriteString("PropertyType", property.PropertyType.FullName);
             }
-            else if(member.MemberType == System.Reflection.MemberTypes.Method)
+            else if (member.MemberType == System.Reflection.MemberTypes.Method)
             {
                 var method = (System.Reflection.MethodInfo)member;
                 writer.WriteString("ReturnType", method.ReturnType.FullName);
                 writer.WriteStartArray("Parameters");
-                foreach(var parameter in method.GetParameters())
+                foreach (var parameter in method.GetParameters())
                 {
                     writer.WriteStartObject();
                     writer.WriteString("Name", parameter.Name);
@@ -222,7 +228,7 @@ public class UnsupportedConverter : JsonConverter<object>
 
             writer.WriteEndObject();
         }
-        else if(value is Enum enumValue)
+        else if (value is Enum enumValue)
         {
             writer.WriteStringValue(enumValue.ToString());
         }
@@ -230,7 +236,7 @@ public class UnsupportedConverter : JsonConverter<object>
         {
             writer.WriteStringValue(encoding.WebName);
         }
-        else if(value is Process valueProcess)
+        else if (value is Process valueProcess)
         {
             writer.WriteStartObject();
             writer.WriteString("ProcessName", valueProcess.ProcessName);

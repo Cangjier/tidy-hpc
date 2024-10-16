@@ -1,5 +1,7 @@
 ﻿using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using TidyHPC.LiteJson;
+using TidyHPC.Loggers;
 using TidyHPC.Routers.Urls.Responses;
 
 namespace TidyHPC.Routers.Urls;
@@ -284,7 +286,8 @@ public class SessionSetter(Session session)
                 netMessageInterface.Target.Dispose();
             }
         }
-        else if (resultValue != null)
+        else if (resultValue != null &&
+            resultValue?.GetType().FullName?.StartsWith("System.Runtime.CompilerServices.AsyncTaskMethodBuilder") == false)
         {
             Session.Response.Headers.ContentEncoding = UrlResponse.DefaultContentEncoding;
             Session.Response.Headers.ContentType = new Headers.ContentType()

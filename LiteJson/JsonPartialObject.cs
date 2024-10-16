@@ -857,8 +857,11 @@ public partial struct Json
     /// <returns></returns>
     public bool ContainsKey(string key)
     {
-        AssertObject();
-        return AsObject.ContainsKey(key);
+        if (IsObject)
+        {
+            return AsObject.ContainsKey(key);
+        }
+        return false;
     }
     #endregion
 }
