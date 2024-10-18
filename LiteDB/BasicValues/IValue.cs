@@ -1,6 +1,4 @@
-﻿using TidyHPC.LiteDB;
-
-namespace TidyHPC.LiteDB.BasicValues;
+﻿namespace TidyHPC.LiteDB.BasicValues;
 
 /// <summary>
 /// Hash Value

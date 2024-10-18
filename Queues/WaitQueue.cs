@@ -195,6 +195,28 @@ public class WaitQueue<TValue>: IWaitQueue
     /// </summary>
     /// <param name="onUse"></param>
     /// <returns></returns>
+    public virtual async Task<TResult> Use<TResult>(Func<TValue, Task<TResult>> onUse)
+    {
+        var item = await Dequeue();
+        try
+        {
+            return await onUse(item);
+        }
+        catch
+        {
+            throw;
+        }
+        finally
+        {
+            Enqueue(item);
+        }
+    }
+
+    /// <summary>
+    /// 使用队列中的值，并在使用完成后将值重新放回队列
+    /// </summary>
+    /// <param name="onUse"></param>
+    /// <returns></returns>
     public virtual async Task Use(Func<Task> onUse)
     {
         var result = await Dequeue();

@@ -270,6 +270,22 @@ internal static class BlockUtil
         table.Cache.EnqueueBuffer(buffer);
     }
 
+    internal static async Task<TResult> ProcessRead<TResult>(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task<TResult>> onBuffer)
+    {
+        var buffer = await table.Cache.DequeueBuffer(bufferSize);
+        try
+        {
+            await address.BeginRead(semaphore);
+            await table.FileStream.ReadAsync(address, buffer, 0, bufferSize);
+            await address.EndRead(semaphore);
+            return await onBuffer(buffer);
+        }
+        finally
+        {
+            table.Cache.EnqueueBuffer(buffer);
+        }
+    }
+
     internal static async Task ProcessReadWithCache(Database table, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[], int> onBuffer)
     {
         await address.BeginRead(semaphore);
@@ -522,6 +538,18 @@ public class RecordVisitor(Block block)
     /// <param name="onBuffer"></param>
     /// <returns></returns>
     public async Task Read(Database table, long address, Func<byte[],Task> onBuffer)
+    {
+        await BlockUtil.ProcessRead(table, address, Block.RecordSize, table.RecordSemaphore, onBuffer);
+    }
+
+    /// <summary>
+    /// 读取记录
+    /// </summary>
+    /// <param name="table"></param>
+    /// <param name="address"></param>
+    /// <param name="onBuffer"></param>
+    /// <returns></returns>
+    public async Task<TResult> Read<TResult>(Database table, long address, Func<byte[], Task<TResult>> onBuffer)
     {
         await BlockUtil.ProcessRead(table, address, Block.RecordSize, table.RecordSemaphore, onBuffer);
     }

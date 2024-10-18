@@ -1,5 +1,4 @@
-﻿using TidyHPC.LiteDB;
-using TidyHPC.LiteDB.Hashes;
+﻿using TidyHPC.LiteDB.Hashes;
 
 namespace TidyHPC.LiteDB.BasicValues;
 /// <inheritdoc/>

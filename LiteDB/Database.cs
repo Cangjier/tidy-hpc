@@ -3,11 +3,12 @@ using TidyHPC.LiteDB.Arrays;
 using TidyHPC.LiteDB.BasicValues;
 using TidyHPC.LiteDB.Caches;
 using TidyHPC.LiteDB.DBTypes;
-using TidyHPC.LiteDB.Debuggers;
 using TidyHPC.LiteDB.Dictionarys;
 using TidyHPC.LiteDB.Hashes;
 using TidyHPC.LiteDB.HashSets;
+using TidyHPC.LiteDB.Interfaces;
 using TidyHPC.LiteDB.Metas;
+using TidyHPC.LiteDB.Metas2;
 using TidyHPC.LiteJson;
 using TidyHPC.Loggers;
 using TidyHPC.Queues;
@@ -74,6 +75,16 @@ public class Database
 
     #endregion
 
+    /// <summary>
+    /// 数据库头信息
+    /// </summary>
+    public DatabaseHeader Header { get; } = new();
+
+    /// <summary>
+    /// 接口集合
+    /// </summary>
+    public InterfaceSet InterfaceSet { get; } = new(DatabaseHeader.Size);
+
     internal FileStreamQueue FileStream { get; } = new();
 
     internal QueueLogger Logger { get; private set; } = null!;
@@ -89,11 +100,6 @@ public class Database
     internal ConcurrentDictionary<string,ObjectInterfaceRuntime> ObjectInterfaces { get; } = new();
 
     internal StringHashSet StringHashSet { get; private set; } = null!;
-
-    /// <summary>
-    /// 调试器
-    /// </summary>
-    public Debugger Debuger { get; private set; } = null!;
 
     #region 信号量
     internal ReaderWriterSemaphorePoolArray<long> SemaphorePoolForAddress { get; } = new(Environment.ProcessorCount * 2, 8);
@@ -178,7 +184,6 @@ public class Database
         Logger = new(databasePath + ".log");
         FileStream.Open(databasePath, Environment.ProcessorCount);
         StringHashSet = new(this, HashStringSetBlockAddress);
-        Debuger = new(this);
         Cache = new(this);
 
         Logger.WriteLine($"startup {DateTime.Now:O}");
@@ -759,12 +764,7 @@ public class Database
             var mapType = objectInterface.Fields[i].MapType;
             if (mapType == FieldMapType.Master ||
                 mapType == FieldMapType.Index ||
-                mapType == FieldMapType.IndexArray ||
                 mapType == FieldMapType.IndexHashSet)
-            {
-                mapAddresses[i] = await AllocateHashTable();
-            }
-            else if(mapType== FieldMapType.IndexSmallHashSet)
             {
                 mapAddresses[i] = await AllocateHashRecord<Int64Value>();
             }
@@ -901,51 +901,6 @@ public class Database
     /// <param name="indexValue"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public async Task<long[]> GetRecordAddressesByIndexArray(string interfaceName,string indexName,object indexValue)
-    {
-        var objectInterface = await GetObjectInterface(interfaceName);
-        if (objectInterface == null)
-        {
-            throw new Exception("ObjectInterface not found");
-        }
-        long mappingHashTableAddress = 0;
-        Field indexField = new();
-        int index = -1;
-        foreach (var field in objectInterface.Fields)
-        {
-            index++;
-            if (field.MapType == FieldMapType.IndexArray && field.Name == indexName)
-            {
-                mappingHashTableAddress = objectInterface.MappingAddress![index];
-                indexField = field;
-                break;
-            }
-        }
-        if (mappingHashTableAddress == 0)
-        {
-            throw new Exception("Index field not found");
-        }
-        if (indexField.Type == FieldType.ReferneceString)
-        {
-            indexValue = await StringHashSet.Borrow((string)indexValue);
-        }
-        else if (indexField.Type == FieldType.MD5)
-        {
-            indexValue = Util.HexToBytes((string)indexValue);
-        }
-        List<long> values = [];
-        await Cache.DictionaryVisitor.GetArray(indexField, mappingHashTableAddress, indexValue, values.Add);
-        return [.. values];
-    }
-
-    /// <summary>
-    /// 根据索引获取记录地址集合
-    /// </summary>
-    /// <param name="interfaceName"></param>
-    /// <param name="indexName"></param>
-    /// <param name="indexValue"></param>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
     public async Task<long[]> GetRecordAddressesByIndexHashSet(string interfaceName,string indexName,object indexValue)
     {
         var objectInterface = await GetObjectInterface(interfaceName);
@@ -960,8 +915,7 @@ public class Database
         foreach (var field in objectInterface.Fields)
         {
             index++;
-            if ((field.MapType == FieldMapType.IndexHashSet||
-                field.MapType == FieldMapType.IndexSmallHashSet) && field.Name == indexName)
+            if ((field.MapType == FieldMapType.IndexHashSet) && field.Name == indexName)
             {
                 mappingHashTableAddress = objectInterface.MappingAddress![index];
                 indexField = field;
@@ -983,10 +937,6 @@ public class Database
         }
         List<long> values = [];
         if (mapType == FieldMapType.IndexHashSet)
-        {
-            await Cache.DictionaryVisitor.GetHashSet(indexField, mappingHashTableAddress, indexValue, values.Add);
-        }
-        else if (mapType == FieldMapType.IndexSmallHashSet)
         {
             await Cache.DictionaryVisitor.GetSmallHashSet(indexField, mappingHashTableAddress, indexValue, values.Add);
         }
@@ -1245,17 +1195,7 @@ public class Database
                 await Cache.DictionaryVisitor.Set(
                     field, objectInterface.MappingAddress![i], recordField.Value, recordAddress);
             }
-            else if (mapType == FieldMapType.IndexArray)
-            {
-                await Cache.DictionaryVisitor.AddToArray(
-                    field, objectInterface.MappingAddress![i], recordField.Value, recordAddress);
-            }
             else if (mapType == FieldMapType.IndexHashSet)
-            {
-                await Cache.DictionaryVisitor.AddToHashSet(
-                    field, objectInterface.MappingAddress![i], recordField.Value, recordAddress);
-            }
-            else if(mapType == FieldMapType.IndexSmallHashSet)
             {
                 await Cache.DictionaryVisitor.AddToSmallHashSet(
                     field, objectInterface.MappingAddress![i], recordField.Value, recordAddress);
@@ -1307,24 +1247,10 @@ public class Database
                     await Cache.DictionaryVisitor.Set(
                     field, objectInterface.MappingAddress![i], newRecordField.Value, recordAddress);
                 }
-                else if (mapType == FieldMapType.IndexArray)
-                {
-                    await Cache.DictionaryVisitor.RemoveFromArray(
-                        field, objectInterface.MappingAddress![i], oldRecordField.Value, recordAddress);
-                    await Cache.DictionaryVisitor.AddToArray(
-                        field, objectInterface.MappingAddress![i], newRecordField.Value, recordAddress);
-                }
                 else if (mapType == FieldMapType.IndexHashSet)
                 {
-                    await Cache.DictionaryVisitor.RemoveFromHashSet(
-                        field, objectInterface.MappingAddress![i], oldRecordField.Value, recordAddress);
-                    await Cache.DictionaryVisitor.AddToHashSet(
-                        field, objectInterface.MappingAddress![i], newRecordField.Value, recordAddress);
-                }
-                else if(mapType == FieldMapType.IndexSmallHashSet)
-                {
                     await Cache.DictionaryVisitor.RemoveFromSmallHashSet(
-                        field, objectInterface.MappingAddress![i], oldRecordField.Value, recordAddress);
+                       field, objectInterface.MappingAddress![i], oldRecordField.Value, recordAddress);
                     await Cache.DictionaryVisitor.AddToSmallHashSet(
                         field, objectInterface.MappingAddress![i], newRecordField.Value, recordAddress);
                 }
@@ -1390,17 +1316,7 @@ public class Database
                 await Cache.DictionaryVisitor.RemoveKey(
                         field, objectInterface.MappingAddress![i], oldRecordField.Value);
             }
-            else if (mapType == FieldMapType.IndexArray)
-            {
-                await Cache.DictionaryVisitor.RemoveFromArray(
-                    field, objectInterface.MappingAddress![i], oldRecordField.Value, recordAddress);
-            }
             else if (mapType == FieldMapType.IndexHashSet)
-            {
-                await Cache.DictionaryVisitor.RemoveFromHashSet(
-                    field, objectInterface.MappingAddress![i], oldRecordField.Value, recordAddress);
-            }
-            else if(mapType == FieldMapType.IndexSmallHashSet)
             {
                 await Cache.DictionaryVisitor.RemoveFromSmallHashSet(
                     field, objectInterface.MappingAddress![i], oldRecordField.Value, recordAddress);

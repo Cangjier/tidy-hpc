@@ -18,15 +18,7 @@ public enum FieldMapType:byte
     /// </summary>
     Index,
     /// <summary>
-    /// 一对多映射，用于小量数据
-    /// </summary>
-    IndexArray,
-    /// <summary>
-    /// 一对多映射，用于中量数据
-    /// </summary>
-    IndexSmallHashSet,
-    /// <summary>
-    /// 一对多映射，用于大量数据
+    /// 值可以重复的索引
     /// </summary>
     IndexHashSet,
 }
