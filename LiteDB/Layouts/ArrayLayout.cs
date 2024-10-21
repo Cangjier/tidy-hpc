@@ -1,9 +1,9 @@
-﻿namespace TidyHPC.LiteDB.Blocks;
+﻿namespace TidyHPC.LiteDB.Layouts;
 
 /// <summary>
 /// Represent a block that contains an array of records
 /// </summary>
-public class ArrayBlock : Block
+public class ArrayLayout : Layout
 {
     /// <summary>
     /// 初始化块的数据

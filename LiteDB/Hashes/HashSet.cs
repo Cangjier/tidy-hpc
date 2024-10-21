@@ -1,7 +1,7 @@
 ﻿using TidyHPC.Common;
 using TidyHPC.LiteDB.Arrays;
 using TidyHPC.LiteDB.BasicValues;
-using TidyHPC.LiteDB.Blocks;
+using TidyHPC.LiteDB.Layouts;
 using TidyHPC.Loggers;
 
 namespace TidyHPC.LiteDB.Hashes;
@@ -25,7 +25,7 @@ public class SmallHashTable<THashValue>:HashTable<THashValue>
 /// <para>hash code -> (hashCode%recordCount) record index</para>
 /// <para>record:{hashCode:int,value:long,nextHashRecordAddress:long}</para>
 /// </summary>
-public class HashTable<THashValue> : ArrayBlock
+public class HashTable<THashValue> : ArrayLayout
      where THashValue : struct, IValue<THashValue>
 {
     /// <summary>
@@ -744,7 +744,7 @@ public class HashTable<THashValue> : ArrayBlock
 /// <summary>
 /// Hask记录块
 /// </summary>
-public class HashBlock<THashValue> : StatisticalBlock
+public class HashBlock<THashValue> : StatisticalLayout
     where THashValue : struct, IValue<THashValue>
 {
     /// <summary>

@@ -1,7 +1,7 @@
-﻿using TidyHPC.LiteDB.Blocks;
+﻿using TidyHPC.LiteDB.Layouts;
 
 namespace TidyHPC.LiteDB.Metas;
-internal class MetaBlock : StatisticalBlock
+internal class MetaBlock : StatisticalLayout
 {
     public MetaBlock Set(long address)
     {

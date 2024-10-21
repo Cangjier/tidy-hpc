@@ -3,8 +3,13 @@
 /// <summary>
 /// 记录
 /// </summary>
-internal interface IRecord
+public interface IRecord
 {
+    /// <summary>
+    /// 布局地址
+    /// </summary>
+    public long LayoutAddress { get; set; }
+
     /// <summary>
     /// 读取数据
     /// </summary>

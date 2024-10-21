@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using TidyHPC.LiteDB.BasicValues;
-using TidyHPC.LiteDB.Blocks;
+using TidyHPC.LiteDB.Layouts;
 using TidyHPC.LiteDB.Hashes;
 using TidyHPC.LiteDB.Metas;
 using TidyHPC.Locks;
@@ -66,7 +66,7 @@ internal class Cache
     /// </summary>
     internal ByteArrayCache IOCache { get; } = new();
 
-    internal WaitQueue<StatisticalBlock> StatisticalBlockPool { get; } = new WaitQueue<StatisticalBlock>().Initialize(64, () => new StatisticalBlock());
+    internal WaitQueue<StatisticalLayout> StatisticalBlockPool { get; } = new WaitQueue<StatisticalLayout>().Initialize(64, () => new StatisticalLayout());
 
     internal WaitQueue<HashTable<Int64Value>> HashTablePool { get; } = new WaitQueue<HashTable<Int64Value>>().Initialize(64, () => new HashTable<Int64Value>());
 

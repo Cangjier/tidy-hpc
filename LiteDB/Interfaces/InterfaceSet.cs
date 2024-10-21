@@ -1,5 +1,4 @@
 ﻿using TidyHPC.LiteDB.BasicValues;
-using TidyHPC.LiteDB.Blocks;
 using TidyHPC.LiteDB.Hashes;
 
 namespace TidyHPC.LiteDB.Metas2;
@@ -31,9 +30,10 @@ public class InterfaceSet
         return await Target.Contains(db, await HashService.GetHashCode(fullName), async interfaceAddress =>
         {
             return await db.Cache.StatisticalBlockPool.Use(async block =>
-             {
-                 block.SetByRecordAddress(interfaceAddress, InterfaceRecord.Size);
-                 return await block.RecordVisitor.Read<bool>(db, interfaceAddress, async bytes =>
+            {
+                 var blockAddress = await db.FileStream.ReadLongAsync(interfaceAddress);
+                 block.SetAddress(blockAddress, InterfaceRecord.Size, Size);
+                 return await block.RecordVisitor.Read<bool>(db, interfaceAddress,bytes =>
                  {
                      return InterfaceRecord.Parse(bytes).FullName == fullName;
                  });

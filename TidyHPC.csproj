@@ -16,7 +16,4 @@
     <BaseOutputPath>$([System.IO.Path]::GetTempPath())Temp\$(MSBuildProjectName)\$(Configuration)\$(Platform)\bin\</BaseOutputPath>
     <IntermediateOutputPath>$([System.IO.Path]::GetTempPath())Temp\$(MSBuildProjectName)\$(Configuration)\$(Platform)\obj\</IntermediateOutputPath>
   </PropertyGroup>
-  <ItemGroup>
-    <Folder Include="LiteDB\DB2\" />
-  </ItemGroup>
 </Project>

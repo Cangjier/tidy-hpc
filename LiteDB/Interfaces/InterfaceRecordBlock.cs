@@ -1,4 +1,4 @@
-﻿using TidyHPC.LiteDB.Blocks;
+﻿using TidyHPC.LiteDB.Layouts;
 using TidyHPC.LiteDB.Metas2;
 
 namespace TidyHPC.LiteDB.Interfaces;
@@ -6,7 +6,7 @@ namespace TidyHPC.LiteDB.Interfaces;
 /// <summary>
 /// 接口记录块
 /// </summary>
-public class InterfaceRecordBlock:StatisticalBlock
+public class InterfaceRecordBlock:StatisticalLayout
 {
     /// <summary>
     /// 块大小
