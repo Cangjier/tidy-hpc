@@ -30,6 +30,8 @@ public class HttpServer : IServer
     /// </summary>
     public HttpListenerPrefixCollection Prefixes=> Listener.Prefixes;
 
+    private SemaphoreSlim StartSemaphore { get; } = new(0);
+
     /// <summary>
     /// 启动监听
     /// </summary>
@@ -37,6 +39,7 @@ public class HttpServer : IServer
     {
         Listener.Start();
         _ = Task.Run(Loop);
+        StartSemaphore.Release();
     }
 
     private async Task Loop()

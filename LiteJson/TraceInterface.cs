@@ -29,6 +29,15 @@ public struct TraceInterface(Json target)
     public static implicit operator TraceInterface(Json target) => new(target);
 
     /// <summary>
+    /// 跟踪期间发生错误，则值为false
+    /// </summary>
+    public bool Success
+    {
+        get => Target.Read("Success", true);
+        set => Target.Set("Success", value);
+    }
+
+    /// <summary>
     /// 消息
     /// </summary>
     public string Message
@@ -59,6 +68,15 @@ public struct TraceInterface(Json target)
     /// <param name="exception"></param>
     public void Error(string? message,Exception? exception=null)
     {
+        if (message != null)
+        {
+            Message = message;
+        }
+        else if(exception != null)
+        {
+            Message = exception.Message;
+        }
+        Success = false;
         Log(Logger.Levels.Error, message, exception);
     }
 
@@ -78,7 +96,15 @@ public struct TraceInterface(Json target)
     /// <param name="trace"></param>
     public void Update(TraceInterface trace)
     {
-        foreach(var (key,value) in trace.Target.GetObjectEnumerable())
+        if(trace.Success == false)
+        {
+            Success = false;
+        }
+        if (!string.IsNullOrEmpty(trace.Message))
+        {
+            Message = trace.Message;
+        }
+        foreach (var (key,value) in trace.Target.GetObjectEnumerable())
         {
             if (Target.ContainsKey(key))
             {
@@ -125,7 +151,7 @@ public struct TraceInterface(Json target)
                     var lineNumber = frame.GetFileLineNumber();
                     if (!string.IsNullOrEmpty(fileName))
                     {
-                        loggerLine.Append($" {fileName} - Line {lineNumber}");
+                        loggerLine.Append($", {fileName} - Line {lineNumber}");
                     }
                 }
             }

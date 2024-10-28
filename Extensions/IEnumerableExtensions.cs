@@ -137,6 +137,35 @@ public static class IEnumerableExtensions
     }
 
     /// <summary>
+    /// Join the IEnumerable with splitChar and itemAction
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="self"></param>
+    /// <param name="splitChar"></param>
+    /// <param name="itemAction"></param>
+    /// <param name="appendEnd"></param>
+    /// <returns></returns>
+    public static string JoinArray<T>(this IEnumerable<T> self, string splitChar, Func<int,T, object> itemAction, bool appendEnd = false)
+    {
+        StringBuilder temp = new StringBuilder();
+        int index = -1;
+        foreach (var i in self)
+        {
+            index++;
+            if (index != 0)
+            {
+                temp.Append(splitChar);
+            }
+            temp.Append(itemAction(index, i));
+        }
+        if (appendEnd)
+        {
+            temp.Append(splitChar);
+        }
+        return temp.ToString();
+    }
+
+    /// <summary>
     /// Foreach Extension with async
     /// </summary>
     /// <typeparam name="T"></typeparam>
