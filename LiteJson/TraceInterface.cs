@@ -70,14 +70,14 @@ public struct TraceInterface(Json target)
     {
         if (message != null)
         {
-            if (Message != "")
+            if (Message == "")
             {
                 Message = message;
             }
         }
         else if(exception != null)
         {
-            if (Message != "")
+            if (Message == "")
             {
                 Message = exception.Message;
             }
