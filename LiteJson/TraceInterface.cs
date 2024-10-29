@@ -70,11 +70,17 @@ public struct TraceInterface(Json target)
     {
         if (message != null)
         {
-            Message = message;
+            if (Message != "")
+            {
+                Message = message;
+            }
         }
         else if(exception != null)
         {
-            Message = exception.Message;
+            if (Message != "")
+            {
+                Message = exception.Message;
+            }
         }
         Success = false;
         Log(Logger.Levels.Error, message, exception);
@@ -94,15 +100,24 @@ public struct TraceInterface(Json target)
     /// 更新跟踪信息
     /// </summary>
     /// <param name="trace"></param>
-    public void Update(TraceInterface trace)
+    /// <param name="overwrite">强行使用trace中的</param>
+    public void Update(TraceInterface trace,bool overwrite = false)
     {
-        if(trace.Success == false)
+        if (overwrite)
         {
-            Success = false;
-        }
-        if (!string.IsNullOrEmpty(trace.Message))
-        {
+            Success = trace.Success;
             Message = trace.Message;
+        }
+        else
+        {
+            if (trace.Success == false)
+            {
+                Success = false;
+            }
+            if (!string.IsNullOrEmpty(trace.Message))
+            {
+                Message = trace.Message;
+            }
         }
         foreach (var (key,value) in trace.Target.GetObjectEnumerable())
         {
