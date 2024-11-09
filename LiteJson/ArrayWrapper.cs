@@ -296,7 +296,7 @@ public struct ArrayWrapper(object? target):IDisposable,IEnumerable<object?>
         }
         else
         {
-            throw new InvalidOperationException("ArrayWrapper: splice only support list type");
+            throw new InvalidOperationException($"ArrayWrapper: splice only support list type, {Target?.GetType()}");
         }
     }
 

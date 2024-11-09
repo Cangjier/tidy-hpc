@@ -30,10 +30,34 @@ public partial struct Json
     public static implicit operator Json(Dictionary<string,object?>? value) => new(value);
 
     /// <summary>
-    /// Implicit convert JsonArray to JsonNode
+    /// Implicit convert List to Json
     /// </summary>
     /// <param name="value"></param>
     public static implicit operator Json(List<object?>? value) => new(value);
+
+    /// <summary>
+    /// Implicit convert string[] to Json
+    /// </summary>
+    /// <param name="value"></param>
+    public static implicit operator Json(string[]? value) => new(value);
+
+    /// <summary>
+    /// Implicit convert int[] to Json
+    /// </summary>
+    /// <param name="value"></param>
+    public static implicit operator Json(int[]? value) => new(value);
+
+    /// <summary>
+    /// Implicit convert double[] to Json
+    /// </summary>
+    /// <param name="value"></param>
+    public static implicit operator Json(double[]? value) => new(value);
+
+    /// <summary>
+    /// Implicit convert float[] to Json
+    /// </summary>
+    /// <param name="value"></param>
+    public static implicit operator Json(float[]? value) => new(value);
 
     /// <summary>
     /// Implicit convert JsonElement to JsonNode
