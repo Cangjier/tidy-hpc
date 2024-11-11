@@ -287,7 +287,8 @@ public class SessionSetter(Session session)
             }
         }
         else if (resultValue != null &&
-            resultValue?.GetType().FullName?.StartsWith("System.Runtime.CompilerServices.AsyncTaskMethodBuilder") == false)
+            resultValue?.GetType().FullName?.StartsWith("System.Runtime.CompilerServices.AsyncTaskMethodBuilder") == false &&
+            resultValue is not Task)
         {
             Session.Response.Headers.ContentEncoding = UrlResponse.DefaultContentEncoding;
             Session.Response.Headers.ContentType = new Headers.ContentType()
