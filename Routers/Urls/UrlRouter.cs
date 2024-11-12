@@ -224,7 +224,7 @@ public class UrlRouter
             {
                 if (session.Request.Url != null)
                 {
-                    if (session.Request.Url.IsAbsoluteUri) url = session.Request.Url.AbsolutePath;
+                    if(session.Request.Url.IsAbsoluteUri) url = session.Request.Url.AbsolutePath;
                     else url = session.Request.Url.OriginalString;
                 }
             }

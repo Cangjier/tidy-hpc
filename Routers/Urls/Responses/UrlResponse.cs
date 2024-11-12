@@ -185,6 +185,11 @@ public record FilterResult: UrlResponse
 }
 
 /// <summary>
+/// 没有响应
+/// </summary>
+public record NoneResponse : UrlResponse;
+
+/// <summary>
 /// Url Response
 /// </summary>
 public abstract record UrlResponse

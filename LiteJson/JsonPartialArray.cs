@@ -449,5 +449,19 @@ public partial struct Json
         });
         return new(result);
     }
+
+    /// <summary>
+    /// 反序
+    /// </summary>
+    /// <returns></returns>
+    public Json Reverse()
+    {
+        List<object?>? result = null;
+        AssertArray(self =>
+        {
+            result = self.Reverse();
+        });
+        return new(result);
+    }
     #endregion
 }

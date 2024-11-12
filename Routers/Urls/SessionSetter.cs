@@ -27,6 +27,10 @@ public class SessionSetter(Session session)
         {
             Session.Cache.FilterStatus = filterResult.Status;
         }
+        else if(resultValue is NoneResponse)
+        {
+
+        }
         else if (resultValue is Redirect urlFilterRedirect)
         {
             //重定向

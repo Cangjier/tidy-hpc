@@ -46,28 +46,22 @@ public class WebsocketClient : IServer,IDisposable
             }
             if (Json.TryParse(message.Message, out var msg))
             {
+                Uri? url = null;
+                if (msg.ContainsKey("url"))
+                {
+                    url = new Uri(Url, msg.Read("url", string.Empty));
+                }
+                if (url == null)
+                {
+                    msg.Dispose();
+                    continue;
+                }
                 MemoryStream requestBody = new(Util.UTF8.GetBytes(message.Message));
                 WebsocketClientSendStream responseBody = new(Client);
                 responseBody.OnClose = () =>
                 {
                     requestBody.Dispose();
                 };
-                Uri? url = null;
-                try
-                {
-                    if (msg.ContainsKey("url"))
-                    {
-                        url = new Uri(Url, msg.Read("url", string.Empty));
-                    }
-                    else
-                    {
-                        throw new Exception($"url not found, {msg}");
-                    }
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e);
-                }
                 msg.Dispose();
                 Session session = new(new WebsocketClientRequest(url, requestBody), new WebsocketClientResponse(Client, responseBody));
                 return session;

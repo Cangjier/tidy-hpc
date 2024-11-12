@@ -347,6 +347,51 @@ public struct ArrayWrapper(object? target):IDisposable,IEnumerable<object?>
     }
 
     /// <summary>
+    /// 反序
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public List<object?> Reverse()
+    {
+        if (Target is List<object?> listObjects)
+        {
+            listObjects.Reverse();
+            return listObjects;
+        }
+        else if (Target is IList list)
+        {
+            List<object?> result = [];
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                result.Add(list[i]);
+            }
+            return result;
+        }
+        else if (Target is Array array)
+        {
+            List<object?> result = [];
+            for (int i = array.Length - 1; i >= 0; i--)
+            {
+                result.Add(array.GetValue(i));
+            }
+            return result;
+        }
+        else if (Target is JsonArray jsonArray)
+        {
+            List<object?> result = [];
+            for (int i = jsonArray.Count - 1; i >= 0; i--)
+            {
+                result.Add(jsonArray[i]);
+            }
+            return result;
+        }
+        else
+        {
+            throw new InvalidOperationException("ArrayWrapper: reverse only support list type");
+        }
+    }
+
+    /// <summary>
     /// Implicit convert json to array wrapper
     /// </summary>
     /// <param name="target"></param>
