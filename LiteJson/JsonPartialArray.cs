@@ -381,6 +381,41 @@ public partial struct Json
     }
 
     /// <summary>
+    /// Get the index of value
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="startIndex"></param>
+    /// <returns></returns>
+    public int IndexOf(Json value,int startIndex)
+    {
+        if (IsArray)
+        {
+            int index = 0;
+            foreach (var item in AsArray.Skip(startIndex))
+            {
+                if (new Json(item) == value)
+                {
+                    return index;
+                }
+                index++;
+            }
+        }
+        else if (IsObject)
+        {
+            int index = 0;
+            foreach (var item in AsObject.Skip(startIndex))
+            {
+                if (new Json(item.Value) == value)
+                {
+                    return index;
+                }
+                index++;
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
     /// Get the last index of value
     /// </summary>
     /// <param name="value"></param>
@@ -402,6 +437,39 @@ public partial struct Json
         {
             int index = AsObject.Count - 1;
             for (int i = index; i >= 0; i--)
+            {
+                if (new Json(AsObject.ElementAt(i).Value) == value)
+                {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Last index of value
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="startIndex"></param>
+    /// <returns></returns>
+    public int LastIndexOf(Json value, int startIndex)
+    {
+        if (IsArray)
+        {
+            int index = AsArray.Count - 1;
+            for (int i = index; i >= startIndex; i--)
+            {
+                if (new Json(AsArray[i]) == value)
+                {
+                    return i;
+                }
+            }
+        }
+        else if (IsObject)
+        {
+            int index = AsObject.Count - 1;
+            for (int i = index; i >= startIndex; i--)
             {
                 if (new Json(AsObject.ElementAt(i).Value) == value)
                 {
