@@ -14,13 +14,13 @@ public class RecordVisitor(Layout block)
     /// <summary>
     /// 读取记录
     /// </summary>
-    /// <param name="table"></param>
+    /// <param name="provider"></param>
     /// <param name="address"></param>
     /// <param name="onBuffer"></param>
     /// <returns></returns>
-    public async Task Read(Database table, long address, Action<byte[]> onBuffer)
+    public async Task Read(LayoutProvider provider, long address, Action<byte[]> onBuffer)
     {
-        await LayoutUtil.ProcessRead(table, address, Block.RecordSize, table.RecordSemaphore, onBuffer);
+        await LayoutUtil.ProcessRead(provider, address, Block.Properties.RecordSize, provider.RecordSemaphore, onBuffer);
     }
 
     /// <summary>
@@ -30,9 +30,9 @@ public class RecordVisitor(Layout block)
     /// <param name="address"></param>
     /// <param name="onBuffer"></param>
     /// <returns></returns>
-    public async Task Read(Database table, long address, Func<byte[], Task> onBuffer)
+    public async Task Read(LayoutProvider provider, long address, Func<byte[], Task> onBuffer)
     {
-        await LayoutUtil.ProcessRead(table, address, Block.RecordSize, table.RecordSemaphore, onBuffer);
+        await LayoutUtil.ProcessRead(provider, address, Block.Properties.RecordSize, provider.RecordSemaphore, onBuffer);
     }
 
     /// <summary>

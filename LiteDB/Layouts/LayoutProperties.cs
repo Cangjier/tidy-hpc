@@ -21,12 +21,12 @@ public class LayoutProperties
     public int RecordSize;
 
     /// <summary>
-    /// 块的大小
+    /// 布局的大小
     /// </summary>
     public int LayoutSize;
 
     /// <summary>
-    /// 记录的数量是通过块的大小计算的
+    /// 记录的数量是通过布局的大小计算的
     /// </summary>
     public int RecordCount { get; set; }
 

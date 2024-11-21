@@ -165,59 +165,43 @@ internal static class LayoutUtil
         return result;
     }
 
-    internal static async Task ProcessRead(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[]> onBuffer)
+    internal static async Task ProcessRead(LayoutProvider provider, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[]> onBuffer)
     {
-        var buffer = await table.Cache.DequeueBuffer(bufferSize);
+        using var buffer = await provider.Cache.BytesCache.Using(bufferSize);
         await address.BeginRead(semaphore);
-        await table.FileStream.ReadAsync(address, buffer, 0, bufferSize);
+        await provider.FileStream.ReadAsync(address, buffer.Bytes, 0, bufferSize);
         await address.EndRead(semaphore);
-        onBuffer(buffer);
-        table.Cache.EnqueueBuffer(buffer);
+        onBuffer(buffer.Bytes);
     }
 
-    internal static async Task ProcessRead(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task> onBuffer)
+    internal static async Task ProcessRead(LayoutProvider provider, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task> onBuffer)
     {
-        var buffer = await table.Cache.DequeueBuffer(bufferSize);
+        using var buffer = await provider.Cache.BytesCache.Using(bufferSize);
         await address.BeginRead(semaphore);
-        await table.FileStream.ReadAsync(address, buffer, 0, bufferSize);
+        await provider.FileStream.ReadAsync(address, buffer.Bytes, 0, bufferSize);
         await address.EndRead(semaphore);
-        await onBuffer(buffer);
-        table.Cache.EnqueueBuffer(buffer);
+        await onBuffer(buffer.Bytes);
     }
 
-    internal static async Task<TResult> ProcessRead<TResult>(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task<TResult>> onBuffer)
+    internal static async Task<TResult> ProcessRead<TResult>(LayoutProvider provider, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task<TResult>> onBuffer)
     {
-        var buffer = await table.Cache.DequeueBuffer(bufferSize);
-        try
-        {
-            await address.BeginRead(semaphore);
-            await table.FileStream.ReadAsync(address, buffer, 0, bufferSize);
-            await address.EndRead(semaphore);
-            return await onBuffer(buffer);
-        }
-        finally
-        {
-            table.Cache.EnqueueBuffer(buffer);
-        }
+        using var buffer = await provider.Cache.BytesCache.Using(bufferSize);
+        await address.BeginRead(semaphore);
+        await provider.FileStream.ReadAsync(address, buffer.Bytes, 0, bufferSize);
+        await address.EndRead(semaphore);
+        return await onBuffer(buffer.Bytes);
     }
 
-    internal static async Task<TResult> ProcessRead<TResult>(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], TResult> onBuffer)
+    internal static async Task<TResult> ProcessRead<TResult>(LayoutProvider provider, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], TResult> onBuffer)
     {
-        var buffer = await table.Cache.DequeueBuffer(bufferSize);
-        try
-        {
-            await address.BeginRead(semaphore);
-            await table.FileStream.ReadAsync(address, buffer, 0, bufferSize);
-            await address.EndRead(semaphore);
-            return onBuffer(buffer);
-        }
-        finally
-        {
-            table.Cache.EnqueueBuffer(buffer);
-        }
+        var buffer = await provider.Cache.BytesCache.Using(bufferSize);
+        await address.BeginRead(semaphore);
+        await provider.FileStream.ReadAsync(address, buffer.Bytes, 0, bufferSize);
+        await address.EndRead(semaphore);
+        return onBuffer(buffer.Bytes);
     }
 
-    internal static async Task ProcessReadWithCache(Database table, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[], int> onBuffer)
+    internal static async Task ProcessReadWithCache(LayoutProvider provider, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[], int> onBuffer)
     {
         await address.BeginRead(semaphore);
         var cacheOffset = (int)(address - cacheAddress);
@@ -226,16 +210,16 @@ internal static class LayoutUtil
             Console.WriteLine($"cacheOffset={cacheOffset},address - cacheAddress={address - cacheAddress},cacheAddress={cacheAddress},cacheSize={cacheSize},address={address},bufferSize={bufferSize}");
             throw new ArgumentOutOfRangeException(nameof(address), "The address is out of the cache range.");
         }
-        table.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool first);
+        provider.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool first);
         if (first)
         {
-            await table.FileStream.ReadAsync(cacheAddress, cache, 0, cacheSize);
+            await provider.FileStream.ReadAsync(cacheAddress, cache, 0, cacheSize);
         }
         await address.EndRead(semaphore);
         onBuffer(cache, cacheOffset);
     }
 
-    internal static async Task ProcessReadWithCache(Database table, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], int, Task> onBuffer)
+    internal static async Task ProcessReadWithCache(LayoutProvider provider, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], int, Task> onBuffer)
     {
         await address.BeginRead(semaphore);
         var cacheOffset = (int)(address - cacheAddress);
@@ -244,175 +228,167 @@ internal static class LayoutUtil
             Console.WriteLine($"cacheOffset={cacheOffset},address - cacheAddress={address - cacheAddress},cacheAddress={cacheAddress},cacheSize={cacheSize},address={address},bufferSize={bufferSize}");
             throw new ArgumentOutOfRangeException(nameof(address), "The address is out of the cache range.");
         }
-        table.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool first);
+        provider.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool first);
         if (first)
         {
-            await table.FileStream.ReadAsync(cacheAddress, cache, 0, cacheSize);
+            await provider.FileStream.ReadAsync(cacheAddress, cache, 0, cacheSize);
         }
         await address.EndRead(semaphore);
         await onBuffer(cache, cacheOffset);
     }
 
-    internal static async Task ProcessWrite(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[]> onBuffer)
+    internal static async Task ProcessWrite(LayoutProvider provider, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[]> onBuffer)
     {
-        var buffer = await table.Cache.DequeueBuffer(bufferSize);
-        onBuffer(buffer);
+        using var buffer = await provider.Cache.BytesCache.Using(bufferSize);
+        onBuffer(buffer.Bytes);
         await address.BeginWrite(semaphore);
-        await table.FileStream.WriteAsync(address, buffer, 0, bufferSize);
+        await provider.FileStream.WriteAsync(address, buffer.Bytes, 0, bufferSize);
         await address.EndWrite(semaphore);
-        table.Cache.EnqueueBuffer(buffer);
     }
 
-    internal static async Task ProcessWrite(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task> onBuffer)
+    internal static async Task ProcessWrite(LayoutProvider provider, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task> onBuffer)
     {
-        var buffer = await table.Cache.DequeueBuffer(bufferSize);
-        await onBuffer(buffer);
+        using var buffer = await provider.Cache.BytesCache.Using(bufferSize);
+        await onBuffer(buffer.Bytes);
         await address.BeginWrite(semaphore);
-        await table.FileStream.WriteAsync(address, buffer, 0, bufferSize);
+        await provider.FileStream.WriteAsync(address, buffer.Bytes, 0, bufferSize);
         await address.EndWrite(semaphore);
-        table.Cache.EnqueueBuffer(buffer);
     }
 
-    internal static async Task ProcessWriteSpan(Database table, long address, int spanOffset, int spanSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[]> onBuffer)
+    internal static async Task ProcessWriteSpan(LayoutProvider provider, long address, int spanOffset, int spanSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[]> onBuffer)
     {
-        var buffer = await table.Cache.DequeueBuffer(spanSize);
-        onBuffer(buffer);
+        var buffer = await provider.Cache.BytesCache.Using(spanSize);
+        onBuffer(buffer.Bytes);
         await address.BeginWrite(semaphore);
-        await table.FileStream.WriteAsync(address + spanOffset, buffer, 0, spanSize);
+        await provider.FileStream.WriteAsync(address + spanOffset, buffer.Bytes, 0, spanSize);
         await address.EndWrite(semaphore);
-        table.Cache.EnqueueBuffer(buffer);
     }
 
-    internal static async Task ProcessWriteSpan(Database table, long address, int spanOffset, int spanSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task> onBuffer)
+    internal static async Task ProcessWriteSpan(LayoutProvider provider, long address, int spanOffset, int spanSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task> onBuffer)
     {
-        var buffer = await table.Cache.DequeueBuffer(spanSize);
-        await onBuffer(buffer);
+        using var buffer = await provider.Cache.BytesCache.Using(spanSize);
+        await onBuffer(buffer.Bytes);
         await address.BeginWrite(semaphore);
-        await table.FileStream.WriteAsync(address + spanOffset, buffer, 0, spanSize);
+        await provider.FileStream.WriteAsync(address + spanOffset, buffer.Bytes, 0, spanSize);
         await address.EndWrite(semaphore);
-        table.Cache.EnqueueBuffer(buffer);
     }
 
-    internal static async Task ProcessWriteWithCache(Database table, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[], int> onBuffer)
+    internal static async Task ProcessWriteWithCache(LayoutProvider provider, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[], int> onBuffer)
     {
         await address.BeginWrite(semaphore);
         var cacheOffset = (int)(address - cacheAddress);
-        table.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool _);
+        provider.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool _);
         onBuffer(cache, cacheOffset);
         async Task func()
         {
-            await table.FileStream.WriteAsync(address, cache, cacheOffset, bufferSize);
+            await provider.FileStream.WriteAsync(address, cache, cacheOffset, bufferSize);
             await address.EndWrite(semaphore);
         }
         _ = func();
     }
 
-    internal static async Task ProcessWriteWithCache(Database table, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], int, Task> onBuffer)
+    internal static async Task ProcessWriteWithCache(LayoutProvider provider, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], int, Task> onBuffer)
     {
         await address.BeginWrite(semaphore);
         var cacheOffset = (int)(address - cacheAddress);
-        table.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool _);
+        provider.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool _);
         await onBuffer(cache, cacheOffset);
         async Task func()
         {
-            await table.FileStream.WriteAsync(address, cache, cacheOffset, bufferSize);
+            await provider.FileStream.WriteAsync(address, cache, cacheOffset, bufferSize);
             await address.EndWrite(semaphore);
         }
         _ = func();
     }
 
-    internal static async Task ProcessUpdate(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], bool> onBuffer)
+    internal static async Task ProcessUpdate(LayoutProvider provider, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], bool> onBuffer)
     {
-        var buffer = await table.Cache.DequeueBuffer(bufferSize);
+        using var buffer = await provider.Cache.BytesCache.Using(bufferSize);
         await address.BeginRead(semaphore);
-        await table.FileStream.ReadAsync(address, buffer, 0, bufferSize);
+        await provider.FileStream.ReadAsync(address, buffer.Bytes, 0, bufferSize);
         await address.EndRead(semaphore);
-        if (onBuffer(buffer))
+        if (onBuffer(buffer.Bytes))
         {
             await address.BeginWrite(semaphore);
-            await table.FileStream.WriteAsync(address, buffer, 0, bufferSize);
+            await provider.FileStream.WriteAsync(address, buffer.Bytes, 0, bufferSize);
             await address.EndWrite(semaphore);
         }
-        table.Cache.EnqueueBuffer(buffer);
     }
 
-    internal static async Task ProcessUpdate(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task<bool>> onBuffer)
+    internal static async Task ProcessUpdate(LayoutProvider provider, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task<bool>> onBuffer)
     {
-        var buffer = await table.Cache.DequeueBuffer(bufferSize);
+        var buffer = await provider.Cache.BytesCache.Using(bufferSize);
         await address.BeginRead(semaphore);
-        await table.FileStream.ReadAsync(address, buffer, 0, bufferSize);
+        await provider.FileStream.ReadAsync(address, buffer.Bytes, 0, bufferSize);
         await address.EndRead(semaphore);
-        if (await onBuffer(buffer))
+        if (await onBuffer(buffer.Bytes))
         {
             await address.BeginWrite(semaphore);
-            await table.FileStream.WriteAsync(address, buffer, 0, bufferSize);
+            await provider.FileStream.WriteAsync(address, buffer.Bytes, 0, bufferSize);
             await address.EndWrite(semaphore);
         }
-        table.Cache.EnqueueBuffer(buffer);
     }
 
-    internal static async Task ProcessUpdateSpan(Database table, long address, int spanOffset, int spanSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task<bool>> onBuffer)
+    internal static async Task ProcessUpdateSpan(LayoutProvider provider, long address, int spanOffset, int spanSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task<bool>> onBuffer)
     {
-        var buffer = await table.Cache.DequeueBuffer(spanSize);
+        var buffer = await provider.Cache.BytesCache.Using(spanSize);
         await address.BeginRead(semaphore);
-        await table.FileStream.ReadAsync(address + spanOffset, buffer, 0, spanSize);
+        await provider.FileStream.ReadAsync(address + spanOffset, buffer.Bytes, 0, spanSize);
         await address.EndRead(semaphore);
-        if (await onBuffer(buffer))
+        if (await onBuffer(buffer.Bytes))
         {
             await address.BeginWrite(semaphore);
-            await table.FileStream.WriteAsync(address + spanOffset, buffer, 0, spanSize);
+            await provider.FileStream.WriteAsync(address + spanOffset, buffer.Bytes, 0, spanSize);
             await address.EndWrite(semaphore);
         }
-        table.Cache.EnqueueBuffer(buffer);
     }
 
-    internal static async Task ProcessUpdateSpan(Database table, long address, int spanOffset, int spanSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], bool> onBuffer)
+    internal static async Task ProcessUpdateSpan(LayoutProvider provider, long address, int spanOffset, int spanSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], bool> onBuffer)
     {
-        var buffer = await table.Cache.DequeueBuffer(spanSize);
+        var buffer = await provider.Cache.BytesCache.Using(spanSize);
         await address.BeginRead(semaphore);
-        await table.FileStream.ReadAsync(address + spanOffset, buffer, 0, spanSize);
+        await provider.FileStream.ReadAsync(address + spanOffset, buffer.Bytes, 0, spanSize);
         await address.EndRead(semaphore);
-        if (onBuffer(buffer))
+        if (onBuffer(buffer.Bytes))
         {
             await address.BeginWrite(semaphore);
-            await table.FileStream.WriteAsync(address + spanOffset, buffer, 0, spanSize);
+            await provider.FileStream.WriteAsync(address + spanOffset, buffer.Bytes, 0, spanSize);
             await address.EndWrite(semaphore);
         }
-        table.Cache.EnqueueBuffer(buffer);
     }
 
-    internal static async Task ProcessUpdateWithCache(Database table, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], int, bool> onBuffer)
+    internal static async Task ProcessUpdateWithCache(LayoutProvider provider, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], int, bool> onBuffer)
     {
         await address.BeginRead(semaphore);
         var cacheOffset = (int)(address - cacheAddress);
-        table.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool first);
+        provider.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool first);
         if (first)
         {
-            await table.FileStream.ReadAsync(cacheAddress, cache, 0, cacheSize);
+            await provider.FileStream.ReadAsync(cacheAddress, cache, 0, cacheSize);
         }
         await address.EndRead(semaphore);
         if (onBuffer(cache, cacheOffset))
         {
             await address.BeginWrite(semaphore);
-            await table.FileStream.WriteAsync(address, cache, cacheOffset, bufferSize);
+            await provider.FileStream.WriteAsync(address, cache, cacheOffset, bufferSize);
             await address.EndWrite(semaphore);
         }
     }
 
-    internal static async Task ProcessUpdateWithCache(Database table, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], int, Task<bool>> onBuffer)
+    internal static async Task ProcessUpdateWithCache(LayoutProvider provider, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], int, Task<bool>> onBuffer)
     {
         await address.BeginRead(semaphore);
         var cacheOffset = (int)(address - cacheAddress);
-        table.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool first);
+        provider.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool first);
         if (first)
         {
-            await table.FileStream.ReadAsync(cacheAddress, cache, 0, cacheSize);
+            await provider.FileStream.ReadAsync(cacheAddress, cache, 0, cacheSize);
         }
         await address.EndRead(semaphore);
         if (await onBuffer(cache, cacheOffset))
         {
             await address.BeginWrite(semaphore);
-            await table.FileStream.WriteAsync(address, cache, cacheOffset, bufferSize);
+            await provider.FileStream.WriteAsync(address, cache, cacheOffset, bufferSize);
             await address.EndWrite(semaphore);
         }
     }
