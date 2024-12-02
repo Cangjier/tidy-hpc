@@ -343,6 +343,10 @@ public partial struct Json
                 }
             }
         }
+        else if (IsString)
+        {
+            return AsString.Contains(value.AsString);
+        }
         return false;
     }
 

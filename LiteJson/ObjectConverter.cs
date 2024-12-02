@@ -165,6 +165,10 @@ public class UnsupportedConverter : JsonConverter<object>
         {
             return true;
         }
+        else if (typeToConvert.FullName?.StartsWith("System.Runtime.CompilerServices.AsyncTaskMethodBuilder") == true)
+        {
+            return true;
+        }
         return false;
     }
 
@@ -254,7 +258,7 @@ public class UnsupportedConverter : JsonConverter<object>
         }
         else
         {
-            throw new NotImplementedException();
+            writer.WriteStringValue(value.ToString());
         }
     }
 }

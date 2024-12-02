@@ -84,25 +84,7 @@ public partial struct Json : IDictionary
     /// <inheritdoc/>
     public bool Contains(object key)
     {
-        if (key is string keyString)
-        {
-            return AsObject.ContainsKey(keyString);
-        }
-        else if (key is Json keyJson)
-        {
-            if (keyJson.IsString)
-            {
-                return AsObject.ContainsKey(keyJson.AsString);
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-        }
-        else
-        {
-            throw new NotImplementedException();
-        }
+        return Contains(new Json(key));
     }
 
     /// <inheritdoc/>
