@@ -65,8 +65,8 @@ public struct Field
     public void DeserializeFromJson(LiteJson.Json self)
     {
         Name = self.Read("Name", string.Empty);
-        Type = (FieldType)self.Read("Type", (byte)0);
+        Type = (FieldType)self.Read("Type", (byte)FieldType.Byte);
         ArrayLength = self.Read("ArrayLength", 0);
-        MapType = (FieldMapType)self.Read("MapType", (byte)0);
+        MapType = (FieldMapType)self.Read("MapType", (byte)FieldMapType.None);
     }
 }

@@ -1209,9 +1209,9 @@ public class Database
     /// 插入一个记录
     /// </summary>
     /// <returns></returns>
-    public async Task<RecordIndex> Insert(string interfaceName, Json document)
+    public async Task<RecordIndex> Insert(string interfaceName, Json record)
     {
-        Logger.WriteLine($"insert {interfaceName} {document.ToString(false)}");
+        Logger.WriteLine($"insert {interfaceName} {record.ToString(false)}");
         var metaAllocater = await GetMetaAllocater(interfaceName);
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
@@ -1219,13 +1219,13 @@ public class Database
             throw new Exception("ObjectInterface not found");
         }
         //首选对记录进行校验
-        objectInterface.Validate(document);
+        objectInterface.Validate(record);
         //申请记录
         var recordAddress = await metaAllocater.AllocateRecord();
         //编辑记录
         RecordRuntime recordRuntime = objectInterface.NewRecordRuntime();
         recordRuntime.Success = false;
-        await recordRuntime.DeserializeFromNewJson(this, document, false);
+        await recordRuntime.DeserializeFromNewJson(this, record, false);
         await EditRecord(recordAddress, objectInterface.GetSize(), record =>
         {
             recordRuntime.SerializeToBuffer(record, 0);
@@ -1274,21 +1274,21 @@ public class Database
     /// </summary>
     /// <param name="interfaceName"></param>
     /// <param name="recordAddress"></param>
-    /// <param name="document"></param>
+    /// <param name="record"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public async Task Update(string interfaceName,long recordAddress,Json document)
+    public async Task Update(string interfaceName,long recordAddress,Json record)
     {
-        Logger.WriteLine($"update {interfaceName} {document.ToString(false)}");
+        Logger.WriteLine($"update {interfaceName} {record.ToString(false)}");
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
             throw new Exception("ObjectInterface not found");
         }
-        objectInterface.Validate(document);
+        objectInterface.Validate(record);
         var oldRecordRuntime = await objectInterface.DeserializeFromAddress(this, recordAddress);
         var newRecordRuntime = objectInterface.NewRecordRuntime();
-        await newRecordRuntime.DeserializeFromNewJson(this, document,true);
+        await newRecordRuntime.DeserializeFromNewJson(this, record,true);
         //变更引用
         for (int i = 0; i < objectInterface.Fields.Count; i++)
         {
@@ -1346,19 +1346,19 @@ public class Database
     /// 根据Master更新数据
     /// </summary>
     /// <param name="interfaceName"></param>
-    /// <param name="document"></param>
+    /// <param name="record"></param>
     /// <returns></returns>
-    public async Task UpdateByMaster(string interfaceName,Json document)
+    public async Task UpdateByMaster(string interfaceName,Json record)
     {
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
             throw new Exception("ObjectInterface not found");
         }
-        objectInterface.Validate(document);
-        var master = objectInterface.GetMasterByJsonDocument(document);
+        objectInterface.Validate(record);
+        var master = objectInterface.GetMasterByJsonDocument(record);
         var recordAddress = await GetRecordAddressByMaster(interfaceName, master);
-        await Update(interfaceName, recordAddress, document);
+        await Update(interfaceName, recordAddress, record);
     }
 
     /// <summary>
