@@ -58,4 +58,16 @@ public class QueueLogger:IDisposable
     /// </summary>
     /// <param name="line"></param>
     public void WriteLine(string line) => LinesQueue.Enqueue(line);
+
+    /// <summary>
+    /// 等待日志清空
+    /// </summary>
+    /// <returns></returns>
+    public async Task WaitForEmpty()
+    {
+        while (LinesQueue.BlockingTaskCount > 0)
+        {
+            await Task.Delay(100);
+        }
+    }
 }

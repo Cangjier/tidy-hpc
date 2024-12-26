@@ -47,6 +47,8 @@ public partial struct Json
             if (Node is JsonNode jsonNode) return jsonNode.GetValue<string>();
             else if (Node is string nodeString) return nodeString;
             else if (Node is char nodeChar) return nodeChar.ToString();
+            else if (Node is DateTime dateTime) return dateTime.ToString("O");
+            else if (Node is Guid guid) return guid.ToString();
             throw new Exception("Can't convert to string");
         }
     }
@@ -133,6 +135,15 @@ public partial struct Json
             if (tType == typeof(byte)) if (jsonNode.GetValueKind() == JsonValueKind.Number && jsonNode.AsValue().TryGetValue(out T? _)) return true;
             if (tType == typeof(bool)) if (jsonNode.GetValueKind() == JsonValueKind.True || jsonNode.GetValueKind() == JsonValueKind.False) return true;
             if (tType == typeof(Guid)) if (jsonNode.GetValueKind() == JsonValueKind.String && Guid.TryParse(jsonNode.GetValue<string>(), out _)) return true;
+            if(tType == typeof(DateTime)) if (jsonNode.GetValueKind() == JsonValueKind.String && DateTime.TryParse(jsonNode.GetValue<string>(), out _)) return true;
+            if (tType == typeof(TimeSpan)) if (jsonNode.GetValueKind() == JsonValueKind.String && TimeSpan.TryParse(jsonNode.GetValue<string>(), out _)) return true;
+        }
+        else if(Node is string nodeString)
+        {
+            if(tType == typeof(Guid)) if (Guid.TryParse(nodeString, out _)) return true;
+            if (tType == typeof(DateTime)) if (DateTime.TryParse(nodeString, out _)) return true;
+            if (tType == typeof(TimeSpan)) if (TimeSpan.TryParse(nodeString, out _)) return true;
+            if (tType == typeof(Uri)) if (Uri.TryCreate(nodeString, UriKind.RelativeOrAbsolute, out _)) return true;
         }
         return false;
     }
@@ -274,6 +285,26 @@ public partial struct Json
     /// As Guid
     /// </summary>
     public readonly Guid AsGuid => As<Guid>();
+
+    /// <summary>
+    /// Is DateTime
+    /// </summary>
+    public readonly bool IsDateTime => Is<DateTime>();
+
+    /// <summary>
+    /// As DateTime
+    /// </summary>
+    public readonly DateTime AsDateTime => As<DateTime>();
+
+    /// <summary>
+    /// Is TimeSpan
+    /// </summary>
+    public readonly bool IsTimeSpan => Is<TimeSpan>();
+
+    /// <summary>
+    /// As TimeSpan
+    /// </summary>
+    public readonly TimeSpan AsTimeSpan => As<TimeSpan>();
 
     /// <summary>
     /// Is Null

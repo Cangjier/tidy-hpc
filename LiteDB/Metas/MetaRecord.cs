@@ -1,4 +1,6 @@
-﻿namespace TidyHPC.LiteDB.Metas;
+﻿using TidyHPC.LiteJson;
+
+namespace TidyHPC.LiteDB.Metas;
 
 /// <summary>
 /// 元数据记录
@@ -12,14 +14,6 @@ public struct MetaRecord:IRecord
     /// <param name="offset"></param>
     public void Read(byte[] buffer, int offset)
     {
-        //TypeName = buffer.DeserializeString(ref offset, 256);
-        //RecordSize = buffer.DeserializeInt(ref offset);
-        //DefineRecordAddress = buffer.DeserializeLong(ref offset);
-        //BlockAddresses = new long[1024];
-        //buffer.DeserializeArray(BlockAddresses, ref offset, sizeof(long) * 1024);
-        //NextMetaRecordAddress = buffer.DeserializeLong(ref offset);
-        //FirstMetaRecordAddress = buffer.DeserializeLong(ref offset);
-
         TypeName = buffer.DeserializeString(ref offset, 256);
         RecordSize = BitConverter.ToInt32(buffer, offset);
         offset += sizeof(int);
@@ -32,6 +26,18 @@ public struct MetaRecord:IRecord
         offset += sizeof(long);
         FirstMetaRecordAddress = BitConverter.ToInt64(buffer, offset);
         offset += sizeof(long);
+    }
+
+    /// <summary>
+    /// Read data
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <param name="offset"></param>
+    /// <param name="database"></param>
+    public void Read(byte[] buffer, int offset,Database database)
+    {
+        Read(buffer, offset);
+        //database.DebugLogger.WriteLine($"Read {TypeName},{RecordSize},{DefineRecordAddress},{new Json(BlockAddresses.Where(item => item != 0).ToArray()).ToString(false)},{NextMetaRecordAddress},{FirstMetaRecordAddress}");
     }
 
     /// <summary>
@@ -76,13 +82,6 @@ public struct MetaRecord:IRecord
     /// <param name="offset"></param>
     public void Write(byte[] buffer, int offset)
     {
-        //buffer.SerializeRef(TypeName, ref offset, 256);
-        //buffer.SerializeRef(RecordSize, ref offset);
-        //buffer.SerializeRef(DefineRecordAddress, ref offset);
-        //buffer.Serialize(BlockAddresses, ref offset);
-        //buffer.SerializeRef(NextMetaRecordAddress, ref offset);
-        //buffer.SerializeRef(FirstMetaRecordAddress, ref offset);
-
         buffer.SerializeRef(TypeName, ref offset, 256);
         BitConverter.GetBytes(RecordSize).CopyTo(buffer, offset);
         offset += sizeof(int);
@@ -94,5 +93,17 @@ public struct MetaRecord:IRecord
         offset += sizeof(long);
         BitConverter.GetBytes(FirstMetaRecordAddress).CopyTo(buffer, offset);
         offset += sizeof(long);
+    }
+
+    /// <summary>
+    /// Write data
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <param name="offset"></param>
+    /// <param name="database"></param>
+    public void Write(byte[] buffer, int offset, Database database)
+    {
+        Write(buffer, offset);
+        //database.DebugLogger.WriteLine($"Write {TypeName},{RecordSize},{DefineRecordAddress},{new Json(BlockAddresses.Where(item => item != 0).ToArray()).ToString(false)},{NextMetaRecordAddress},{FirstMetaRecordAddress}");
     }
 }

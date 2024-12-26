@@ -147,7 +147,7 @@ public partial struct Json
     /// <param name="value"></param>
     public Json Set(string key, DateTime value)
     {
-        AssertObject(self => self[key] = value.ToString("O"));
+        AssertObject(self => self[key] = value);
         return this;
     }
 
@@ -337,16 +337,26 @@ public partial struct Json
             {
                 return self.Get(key);
             }
-            else
+        }
+        if (self.Node is null) return Undefined;
+        var nodeType = self.Node.GetType();
+        var fields = nodeType.GetFields();
+        foreach (var field in fields)
+        {
+            if (field.Name == key)
             {
-                return Undefined;
+                return new(field.GetValue(self.Node));
             }
         }
-        else
+        var properties = nodeType.GetProperties();
+        foreach (var property in properties)
         {
-            return Undefined;
+            if (property.Name == key)
+            {
+                return new(property.GetValue(self.Node));
+            }
         }
-
+        return Undefined;
     }
 
     /// <summary>
@@ -358,7 +368,45 @@ public partial struct Json
     /// <returns></returns>
     public static Json op_SetMember(Json self, string key, Json value)
     {
-        self.Set(key, value);
+        if (self.IsObject)
+        {
+            self.Set(key, value);
+            return value;
+        }
+        if (self.Node is null) return value;
+        var nodeType = self.Node.GetType();
+        var fields = nodeType.GetFields();
+        foreach (var field in fields)
+        {
+            if (field.Name == key)
+            {
+                if(field.FieldType == typeof(Json))
+                {
+                    field.SetValue(self.Node, value);
+                }
+                else
+                {
+                    field.SetValue(self.Node, value.Node);
+                }
+                return value;
+            }
+        }
+        var properties = nodeType.GetProperties();
+        foreach (var property in properties)
+        {
+            if (property.Name == key)
+            {
+                if (property.PropertyType == typeof(Json))
+                {
+                    property.SetValue(self.Node, value);
+                }
+                else
+                {
+                    property.SetValue(self.Node, value.Node);
+                }
+                return value;
+            }
+        }
         return value;
     }
 

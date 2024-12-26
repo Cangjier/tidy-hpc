@@ -78,6 +78,8 @@ public class Database
 
     internal QueueLogger Logger { get; private set; } = null!;
 
+    internal QueueLogger DebugLogger { get; private set; } = null!;
+
     /// <summary>
     /// TypeName -> MetaAllocater
     /// </summary>
@@ -176,6 +178,7 @@ public class Database
     public async Task Startup(string databasePath)
     {
         Logger = new(databasePath + ".log");
+        DebugLogger = new(databasePath + ".debug.log");
         FileStream.Open(databasePath, Environment.ProcessorCount);
         StringHashSet = new(this, HashStringSetBlockAddress);
         Debuger = new(this);
@@ -301,10 +304,14 @@ public class Database
     /// </summary>
     /// <param name="interfaceName"></param>
     /// <returns></returns>
-    internal async Task<ObjectInterfaceRuntime?> GetObjectInterface(string interfaceName)
+    internal async Task<ObjectInterfaceRuntime> GetObjectInterface(string interfaceName)
     {
         if(ObjectInterfaces.TryGetValue(interfaceName,out ObjectInterfaceRuntime? objectInterface))
         {
+            if (objectInterface == null)
+            {
+                throw new Exception($"ObjectInterface `{interfaceName}` cache value is null");
+            }
             return objectInterface;
         }
         var metaRecord = await GetMetaRecord(interfaceName);
@@ -314,7 +321,7 @@ public class Database
         }
         if (metaRecord.Value.DefineRecordAddress == 0)
         {
-            return null;
+            throw new Exception($"ObjectInterface `{interfaceName}` MetaRecord DefineAddress is null, {new Json(metaRecord).ToString()}");
         }
         var defineRecord = await GetRecord<MetaDefineRecord>(metaRecord.Value.DefineRecordAddress, MetaDefineRecord.Size);
         ObjectInterfaceRuntime result = new();
@@ -538,10 +545,11 @@ public class Database
                 //新建状态
                 var record = firstMetaRecordAddress;
                 metaBlock.SetByRecordAddress(record);
+                //DebugLogger.WriteLine($"RegisterNativeInterface {record}");
                 await metaBlock.RecordVisitor.Update(this, record, buffer =>
                 {
                     MetaRecord metaRecord = new();
-                    metaRecord.Read(buffer, 0);
+                    metaRecord.Read(buffer, 0,this);
                     metaRecord.FirstMetaRecordAddress = firstMetaRecordAddress;
                     metaRecord.TypeName = interfaceName;
                     metaRecord.RecordSize = recordSie;
@@ -549,7 +557,7 @@ public class Database
                     {
                         metaRecord.BlockAddresses![i] = nativeBlockAddresses[i];
                     }
-                    metaRecord.Write(buffer, 0);
+                    metaRecord.Write(buffer, 0, this);
                     return true;
                 });
                 return record;
@@ -789,7 +797,7 @@ public class Database
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"All({interfaceName}) ObjectInterface not found");
         }
         var blockAddresses =await metaAllocater.GetBlockAddresses();
         var block = await Cache.StatisticalBlockPool.Dequeue();
@@ -822,7 +830,7 @@ public class Database
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"GetRecordAddressByMaster({interfaceName},{master}) ObjectInterface not found");
         }
         long mappingHashTableAddress = 0;
         FieldType masterType = FieldType.Guid;
@@ -863,7 +871,7 @@ public class Database
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"GetRecordAddressByIndex({interfaceName},{indexName},{indexValue}) ObjectInterface not found");
         }
         long mappingHashTableAddress = 0;
         Field indexField = new();
@@ -906,7 +914,7 @@ public class Database
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"GetRecordAddressesByIndexArray({interfaceName},{indexName},{indexValue}) ObjectInterface not found");
         }
         long mappingHashTableAddress = 0;
         Field indexField = new();
@@ -935,6 +943,7 @@ public class Database
         }
         List<long> values = [];
         await Cache.DictionaryVisitor.GetArray(indexField, mappingHashTableAddress, indexValue, values.Add);
+        Logger.WriteLine($"indexarray {interfaceName} {indexName} {indexValue} {new Json(values).ToString(false)}");
         return [.. values];
     }
 
@@ -951,7 +960,7 @@ public class Database
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"GetRecordAddressesByIndexHashSet({interfaceName},{indexName},{indexValue}) ObjectInterface not found");
         }
         long mappingHashTableAddress = 0;
         Field indexField = new();
@@ -990,6 +999,7 @@ public class Database
         {
             await Cache.DictionaryVisitor.GetSmallHashSet(indexField, mappingHashTableAddress, indexValue, values.Add);
         }
+        Logger.WriteLine($"indexset {interfaceName} {indexName} {indexValue} {new Json(values).ToString(false)}");
         return [.. values];
     }
 
@@ -1089,7 +1099,7 @@ public class Database
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"FindByMaster({interfaceName},{master}) ObjectInterface not found");
         }
         var recordAddress = await GetRecordAddressByMaster(interfaceName, master);
         using var recordRuntime = await objectInterface.DeserializeFromAddress(this, recordAddress);
@@ -1112,7 +1122,7 @@ public class Database
             var objectInterface = await GetObjectInterface(interfaceName);
             if (objectInterface == null)
             {
-                throw new Exception("ObjectInterface not found");
+                throw new Exception($"FindByIndex({interfaceName},{indexName},{indexValue}) ObjectInterface not found");
             }
             var recordAddress = await GetRecordAddressByIndex(interfaceName, indexName, indexValue);
             using var recordRuntime = await objectInterface.DeserializeFromAddress(this, recordAddress);
@@ -1138,7 +1148,7 @@ public class Database
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"FindByAddress({interfaceName},{address}) ObjectInterface not found");
         }
         using var recordRuntime = await objectInterface.DeserializeFromAddress(this, address);
         return await recordRuntime.SerializeToJson(this);
@@ -1152,12 +1162,13 @@ public class Database
     /// <exception cref="Exception"></exception>
     internal async Task<MetaAllocater?> GetMetaAllocaterByRecordAddress(long recordAddress)
     {
+        var blockAddress = GetBlockAddress(recordAddress);
         MetaAllocater? metaAllocater = null;
         var tempTypeNames = Cache.CacheInterfaceNames.Value.ToArray();
         foreach (var typeName in tempTypeNames)
         {
             var item = await GetMetaAllocater(typeName);
-            if (await item.ContainsBlockAddress(recordAddress))
+            if (await item.ContainsBlockAddress(blockAddress))
             {
                 metaAllocater = item;
                 break;
@@ -1170,7 +1181,7 @@ public class Database
             foreach (var typeName in otherTypeNames)
             {
                 var item = await GetMetaAllocater(typeName);
-                if (await item.ContainsBlockAddress(recordAddress))
+                if (await item.ContainsBlockAddress(blockAddress))
                 {
                     metaAllocater = item;
                     break;
@@ -1194,12 +1205,12 @@ public class Database
         MetaAllocater? metaAllocater = await GetMetaAllocaterByRecordAddress(address);
         if(metaAllocater == null)
         {
-            throw new Exception("MetaAllocater not found");
+            throw new Exception($"FindByAddress({address}) MetaAllocater not found");
         }
         var objectInterface = await GetObjectInterface(metaAllocater.TypeName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"FindByAddress({address}) ObjectInterface not found");
         }
         using var recordRuntime = await objectInterface.DeserializeFromAddress(this, address);
         return await recordRuntime.SerializeToJson(this);
@@ -1211,12 +1222,11 @@ public class Database
     /// <returns></returns>
     public async Task<RecordIndex> Insert(string interfaceName, Json record)
     {
-        Logger.WriteLine($"insert {interfaceName} {record.ToString(false)}");
         var metaAllocater = await GetMetaAllocater(interfaceName);
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"Insert({interfaceName},{record.ToString(false)}) ObjectInterface not found");
         }
         //首选对记录进行校验
         objectInterface.Validate(record);
@@ -1261,6 +1271,7 @@ public class Database
                     field, objectInterface.MappingAddress![i], recordField.Value, recordAddress);
             }
         }
+        Logger.WriteLine($"insert {interfaceName} {record.ToString(false)} {recordAddress}");
         //返回索引
         return new RecordIndex()
         {
@@ -1283,7 +1294,7 @@ public class Database
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"Update({interfaceName},{recordAddress},{record.ToString(false)}) ObjectInterface not found");
         }
         objectInterface.Validate(record);
         var oldRecordRuntime = await objectInterface.DeserializeFromAddress(this, recordAddress);
@@ -1353,7 +1364,7 @@ public class Database
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"UpdateByMaster({interfaceName},{record.ToString(false)}) ObjectInterface not found");
         }
         objectInterface.Validate(record);
         var master = objectInterface.GetMasterByJsonDocument(record);
@@ -1375,7 +1386,7 @@ public class Database
         var metaAllocater = await GetMetaAllocater(interfaceName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"Delete({interfaceName},{recordAddress}) ObjectInterface not found");
         }
         var oldRecordRuntime = await objectInterface.DeserializeFromAddress(this, recordAddress);
         for (int i = 0; i < objectInterface.Fields.Count; i++)
@@ -1426,7 +1437,7 @@ public class Database
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
-            throw new Exception("ObjectInterface not found");
+            throw new Exception($"DeleteByMaster({interfaceName},{master}) ObjectInterface not found");
         }
         var recordAddress = await GetRecordAddressByMaster(interfaceName, master);
         await Delete(interfaceName, recordAddress);

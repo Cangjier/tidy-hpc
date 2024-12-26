@@ -415,18 +415,18 @@ internal class FieldRuntime:IDisposable
         }
     }
 
-    public async Task DeserializeFromJson(Database db,Json element,bool isBorrowString)
+    public async Task DeserializeFromJson(Database db,Json fieldValue,bool isBorrowString)
     {
         var type = Define.Type;
         if (Define.IsArray)
         {
             if (type == FieldType.Char)
             {
-                Value = element.AsString ?? throw new InvalidCastException();
+                Value = fieldValue.AsString ?? throw new InvalidCastException();
             }
             else
             {
-                if (element.Count > Define.ArrayLength)
+                if (fieldValue.Count > Define.ArrayLength)
                 {
                     throw new IndexOutOfRangeException();
                 }
@@ -434,7 +434,7 @@ internal class FieldRuntime:IDisposable
                 {
                     var byteArray = new byte[Define.ArrayLength];
                     var i = 0;
-                    foreach (var item in element.GetArrayEnumerable())
+                    foreach (var item in fieldValue.GetArrayEnumerable())
                     {
                         byteArray[i] = item.AsByte;
                         i++;
@@ -445,7 +445,7 @@ internal class FieldRuntime:IDisposable
                 {
                     var booleanArray = new bool[Define.ArrayLength];
                     var i = 0;
-                    foreach (var item in element)
+                    foreach (var item in fieldValue)
                     {
                         booleanArray[i] = item.AsBoolean;
                         i++;
@@ -456,7 +456,7 @@ internal class FieldRuntime:IDisposable
                 {
                     var int32Array = new int[Define.ArrayLength];
                     var i = 0;
-                    foreach (var item in element)
+                    foreach (var item in fieldValue)
                     {
                         int32Array[i] = item.AsInt32;
                         i++;
@@ -467,7 +467,7 @@ internal class FieldRuntime:IDisposable
                 {
                     var floatArray = new float[Define.ArrayLength];
                     var i = 0;
-                    foreach (var item in element)
+                    foreach (var item in fieldValue)
                     {
                         floatArray[i] = item.AsFloat;
                         i++;
@@ -478,7 +478,7 @@ internal class FieldRuntime:IDisposable
                 {
                     var doubleArray = new double[Define.ArrayLength];
                     var i = 0;
-                    foreach (var item in element)
+                    foreach (var item in fieldValue)
                     {
                         doubleArray[i] = item.AsDouble;
                         i++;
@@ -489,7 +489,7 @@ internal class FieldRuntime:IDisposable
                 {
                     var int64Array = new long[Define.ArrayLength];
                     var i = 0;
-                    foreach (var item in element)
+                    foreach (var item in fieldValue)
                     {
                         int64Array[i] = item.AsInt64;
                         i++;
@@ -500,7 +500,7 @@ internal class FieldRuntime:IDisposable
                 {
                     var referenceStringArray = new long[Define.ArrayLength];
                     var i = 0;
-                    foreach (var item in element)
+                    foreach (var item in fieldValue)
                     {
                         if (isBorrowString)
                         {
@@ -518,9 +518,9 @@ internal class FieldRuntime:IDisposable
                 {
                     var guidArray = new Guid[Define.ArrayLength];
                     var i = 0;
-                    foreach (var item in element)
+                    foreach (var item in fieldValue)
                     {
-                        guidArray[i] = Guid.Parse(item.AsString ?? throw new InvalidCastException());
+                        guidArray[i] = item.AsGuid;
                         i++;
                     }
                     Value = guidArray;
@@ -529,7 +529,7 @@ internal class FieldRuntime:IDisposable
                 {
                     var md5Array = new byte[Define.ArrayLength][];
                     var i = 0;
-                    foreach (var item in element)
+                    foreach (var item in fieldValue)
                     {
                         md5Array[i] = Util.HexToBytes(item.AsString ?? throw new InvalidCastException());
                         i++;
@@ -540,7 +540,7 @@ internal class FieldRuntime:IDisposable
                 {
                     var dateTimeArray = new long[Define.ArrayLength];
                     var i = 0;
-                    foreach (var item in element)
+                    foreach (var item in fieldValue)
                     {
                         dateTimeArray[i] = DateTime.Parse(item.AsString).Ticks;
                         i++;
@@ -557,11 +557,11 @@ internal class FieldRuntime:IDisposable
         {
             if(type == FieldType.Byte)
             {
-                Value = element.AsByte;
+                Value = fieldValue.AsByte;
             }
             else if (type == FieldType.Char)
             {
-                var stringValue = element.AsString ?? throw new InvalidCastException();
+                var stringValue = fieldValue.AsString ?? throw new InvalidCastException();
                 if (stringValue.Length == 0)
                 {
                     throw new InvalidCastException();
@@ -570,23 +570,23 @@ internal class FieldRuntime:IDisposable
             }
             else if (type == FieldType.Boolean)
             {
-                Value = element.AsBoolean;
+                Value = fieldValue.AsBoolean;
             }
             else if (type == FieldType.Int32)
             {
-                Value = element.AsInt32;
+                Value = fieldValue.AsInt32;
             }
             else if (type == FieldType.Float)
             {
-                Value = element.AsFloat;
+                Value = fieldValue.AsFloat;
             }
             else if (type == FieldType.Double)
             {
-                Value = element.AsDouble;
+                Value = fieldValue.AsDouble;
             }
             else if (type == FieldType.Int64)
             {
-                Value = element.AsInt64;
+                Value = fieldValue.AsInt64;
             }
             else if (type == FieldType.ReferneceString)
             {
@@ -594,30 +594,30 @@ internal class FieldRuntime:IDisposable
                 {
                     Json self = Json.NewObject();
                     Define.SerializeToJson(self.GetOrCreateObject("field"));
-                    self["value"] = element.ToString();
+                    self["value"] = fieldValue.ToString();
                     db.Logger.WriteLine($"// field new {self.ToString(false)}");
                 }
                 if (isBorrowString)
                 {
-                    Value = await db.StringHashSet.Borrow(element.AsString ?? throw new InvalidCastException());
+                    Value = await db.StringHashSet.Borrow(fieldValue.AsString ?? throw new InvalidCastException());
                 }
                 else
                 {
-                    Value = await db.StringHashSet.New(element.AsString ?? throw new InvalidCastException());
+                    Value = await db.StringHashSet.New(fieldValue.AsString ?? throw new InvalidCastException());
                 }
                 
             }
             else if (type == FieldType.Guid)
             {
-                Value = Guid.Parse(element.AsString ?? throw new InvalidCastException());
+                Value = Guid.Parse(fieldValue.AsString ?? throw new InvalidCastException());
             }
             else if (type == FieldType.MD5)
             {
-                Value = Util.HexToBytes(element.AsString ?? throw new InvalidCastException());
+                Value = Util.HexToBytes(fieldValue.AsString ?? throw new InvalidCastException());
             }
             else if (type == FieldType.DateTime)
             {
-                Value = DateTime.Parse(element.AsString).Ticks;
+                Value = DateTime.Parse(fieldValue.AsString).Ticks;
             }
             else
             {

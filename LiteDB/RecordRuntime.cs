@@ -169,7 +169,7 @@ internal class RecordRuntime:IDisposable
         return result;
     }
 
-    public async Task DeserializeFromNewJson(Database db,Json document,bool isBorrowString)
+    public async Task DeserializeFromNewJson(Database db,Json record,bool isBorrowString)
     {
         if (Fields == null)
         {
@@ -177,7 +177,7 @@ internal class RecordRuntime:IDisposable
         }
         var masterField = Fields.First(item => item.Define.MapType == FieldMapType.Master);
         Master = Guid.Empty;
-        if (document.TryGet(masterField.Define.Name, out var masterElement))
+        if (record.TryGet(masterField.Define.Name, out var masterElement))
         {
             Master = masterElement.AsGuid;
         }
@@ -192,7 +192,7 @@ internal class RecordRuntime:IDisposable
                 Fields[i].Value = Master;
                 continue;
             }
-            await Fields[i].DeserializeFromJson(db, document.Get(Fields[i].Define.Name,Json.Null), isBorrowString);
+            await Fields[i].DeserializeFromJson(db, record.Get(Fields[i].Define.Name,Json.Null), isBorrowString);
         }
     }
 

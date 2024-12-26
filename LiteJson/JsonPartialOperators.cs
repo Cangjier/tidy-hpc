@@ -122,6 +122,14 @@ public partial struct Json
         {
             return left.AsNumber > right.AsNumber;
         }
+        else if (left.IsDateTime && right.IsDateTime)
+        {
+            return left.AsDateTime > right.AsDateTime;
+        }
+        else if (left.IsTimeSpan && right.IsTimeSpan)
+        {
+            return left.AsTimeSpan > right.AsTimeSpan;
+        }
         throw new Exception("Invalid operation");
     }
 
@@ -137,6 +145,14 @@ public partial struct Json
         if (left.IsNumber && right.IsNumber)
         {
             return left.AsNumber < right.AsNumber;
+        }
+        else if (left.IsDateTime && right.IsDateTime)
+        {
+            return left.AsDateTime < right.AsDateTime;
+        }
+        else if (left.IsTimeSpan && right.IsTimeSpan)
+        {
+            return left.AsTimeSpan < right.AsTimeSpan;
         }
         throw new Exception("Invalid operation");
     }
@@ -154,6 +170,14 @@ public partial struct Json
         {
             return left.AsNumber >= right.AsNumber;
         }
+        else if (left.IsDateTime && right.IsDateTime)
+        {
+            return left.AsDateTime >= right.AsDateTime;
+        }
+        else if (left.IsTimeSpan && right.IsTimeSpan)
+        {
+            return left.AsTimeSpan >= right.AsTimeSpan;
+        }
         throw new Exception("Invalid operation");
     }
 
@@ -169,6 +193,14 @@ public partial struct Json
         if (left.IsNumber && right.IsNumber)
         {
             return left.AsNumber <= right.AsNumber;
+        }
+        else if (left.IsDateTime && right.IsDateTime)
+        {
+            return left.AsDateTime <= right.AsDateTime;
+        }
+        else if (left.IsTimeSpan && right.IsTimeSpan)
+        {
+            return left.AsTimeSpan <= right.AsTimeSpan;
         }
         throw new Exception("Invalid operation");
     }
@@ -187,5 +219,19 @@ public partial struct Json
             return left.AsNumber % right.AsNumber;
         }
         throw new Exception("Invalid operation");
+    }
+
+    /// <summary>
+    /// Logical Not
+    /// </summary>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    public static bool operator !(Json value)
+    {
+        if (value.IsTrue) return false;
+        if (value.IsFalse) return true;
+        if (value.IsUndefined) return true;
+        if (value.IsNull) return true;
+        return false;
     }
 }

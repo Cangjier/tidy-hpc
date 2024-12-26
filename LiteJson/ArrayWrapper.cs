@@ -275,6 +275,8 @@ public struct ArrayWrapper(object? target):IDisposable,IEnumerable<object?>
     {
         if (Target is List<object?> listObjects)
         {
+            var nextCount = listObjects.Count - start;
+            if(deleteCount > nextCount) deleteCount = nextCount;
             List<object?> result = listObjects.GetRange(start, deleteCount);
             listObjects.RemoveRange(start, deleteCount);
             listObjects.InsertRange(start, items.Select(item=>item.Node));
@@ -282,6 +284,8 @@ public struct ArrayWrapper(object? target):IDisposable,IEnumerable<object?>
         }
         else if (Target is IList list)
         {
+            var nextCount = list.Count - start;
+            if (deleteCount > nextCount) deleteCount = nextCount;
             List<object?> result = [];
             for (int i = 0; i < deleteCount; i++)
             {
@@ -311,21 +315,23 @@ public struct ArrayWrapper(object? target):IDisposable,IEnumerable<object?>
     {
         if (Target is List<object?> listObjects)
         {
+            if (end >= listObjects.Count) end = listObjects.Count;
             return listObjects.GetRange(start, end - start);
         }
         else if (Target is IList list)
         {
             List<object?> result = [];
-            for (int i = start; i < end; i++)
+            var count = list.Count;
+            for (int i = start; i < end && i < count; i++)
             {
                 result.Add(list[i]);
             }
             return result;
         }
-        else if(Target is Array array)
+        else if (Target is Array array)
         {
             List<object?> result = [];
-            for (int i = start; i < end; i++)
+            for (int i = start; i < end && i < array.Length; i++)
             {
                 result.Add(array.GetValue(i));
             }
@@ -334,7 +340,7 @@ public struct ArrayWrapper(object? target):IDisposable,IEnumerable<object?>
         else if (Target is JsonArray jsonArray)
         {
             List<object?> result = [];
-            for (int i = start; i < end; i++)
+            for (int i = start; i < end && i < jsonArray.Count; i++)
             {
                 result.Add(jsonArray[i]);
             }

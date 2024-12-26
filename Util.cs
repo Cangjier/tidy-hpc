@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
+using TidyHPC.LiteJson;
 
 namespace TidyHPC;
 /// <summary>
@@ -12,6 +13,8 @@ public class Util
     /// UTF8 without BOM
     /// </summary>
     public static Encoding UTF8 { get; } = new UTF8Encoding(false);
+
+   
 
     /// <summary>
     /// Hex string to bytes
@@ -69,5 +72,7 @@ public class Util
         }
         return hex.ToString();
     }
+
+
 
 }

@@ -376,6 +376,7 @@ internal static class BlockUtil
 
     internal static async Task ProcessUpdate(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], bool> onBuffer)
     {
+        //table.DebugLogger.WriteLine($"ProcessUpdate {address} {bufferSize}");
         var buffer = await table.Cache.DequeueBuffer(bufferSize);
         await address.BeginRead(semaphore);
         await table.FileStream.ReadAsync(address, buffer, 0, bufferSize);

@@ -393,7 +393,13 @@ public partial struct Json
     public static object? op_ImplicitTo(Json value,Type toType)
     {
         if (toType == typeof(string) && value.IsString == false) return value.ToString();
-        else if (toType == typeof(int) && value.IsInt32 == false) return value.ToInt32;
+        else if (toType == typeof(bool) && value.IsString) return value.AsString == "true" ? true : false;
+        else if (toType == typeof(int)) return value.AsInt32;
+        else if (toType == typeof(float)) return value.AsFloat;
+        else if (toType == typeof(double)) return value.AsDouble;
+        else if (toType == typeof(long)) return value.AsInt64;
+        else if (toType == typeof(Guid)) return value.AsGuid;
+        else if (toType == typeof(DateTime)) return value.Is<DateTime>() ? value.As<DateTime>() : DateTime.Parse(value.ToString());
         else if (toType == typeof(string[]))
         {
             return value.ToArray(item => item.AsString);
@@ -402,13 +408,37 @@ public partial struct Json
         {
             return value.ToArray(item => item.ToInt32);
         }
+        else if (toType.IsArray && toType.HasElementType)
+        {
+            var elementType = toType.GetElementType();
+            if (elementType == null) throw new NullReferenceException();
+            var array = Array.CreateInstance(elementType, value.Count);
+            for (int i = 0; i < value.Count; i++)
+            {
+                object? changedValue = null;
+                if (value[i].Node?.GetType().IsAssignableTo(elementType) == true)
+                {
+                    changedValue = value[i].Node;
+                }
+                else
+                {
+                    changedValue = op_ImplicitTo(value[i], elementType);
+                }
+                if (changedValue == null && value[i].IsNull == false)
+                {
+                    throw new InvalidCastException();
+                }
+                array.SetValue(changedValue, i);
+            }
+            return array;
+        }
         else if (toType.IsGenericType && toType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
         {
             var genericType = toType.GetGenericArguments();
             var result = Activator.CreateInstance(toType);
             foreach (var item in value.AsObject)
             {
-                if(item.Value is bool valueBoolean)
+                if (item.Value is bool valueBoolean)
                 {
                     var key = Convert.ChangeType(item.Key, genericType[0]);
                     var val = Convert.ChangeType(valueBoolean ? "true" : "false", genericType[1]);

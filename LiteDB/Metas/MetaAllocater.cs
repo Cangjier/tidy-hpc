@@ -1,4 +1,5 @@
-﻿using TidyHPC.Locks;
+﻿using TidyHPC.LiteJson;
+using TidyHPC.Locks;
 using TidyHPC.Queues;
 
 namespace TidyHPC.LiteDB.Metas;
@@ -75,10 +76,11 @@ internal class MetaAllocater
             {
                 var currentMetaRecordAddress = lastMetaReocrdAddress;
                 metaBlock.SetByRecordAddress(currentMetaRecordAddress);
+                //Database.DebugLogger.WriteLine($"SetBlockAddresses(AddBlockAddressToMetaRecord) {currentMetaRecordAddress} {blockAddress}");
                 await metaBlock.RecordVisitor.Update(Database, currentMetaRecordAddress, buffer =>
                 {
                     MetaRecord record = new();
-                    record.Read(buffer, 0);
+                    record.Read(buffer, 0,Database);
                     for (int i = 0; i < record.BlockAddresses!.Length; i++)
                     {
                         if (record.BlockAddresses[i] == 0)
@@ -90,7 +92,7 @@ internal class MetaAllocater
                     }
                     if (isWrited)
                     {
-                        record.Write(buffer, 0);
+                        record.Write(buffer, 0, Database);
                     }
                     lastMetaReocrdAddress = record.NextMetaRecordAddress;
                     return isWrited;
@@ -146,6 +148,7 @@ internal class MetaAllocater
         await statisticalBlock.Initialize(Database);
         Database.Cache.StatisticalBlockPool.Enqueue(statisticalBlock);
         #endregion
+        //Database.DebugLogger.WriteLine($"AllocateStatisticalBlock {TypeName} MetaRecordAddress({MetaRecordAddress}) {blockAddress}");
         await AddBlockAddressToMetaRecord(blockAddress);
         CacheBlockAddresses.Process(() =>
         {
@@ -333,6 +336,7 @@ internal class MetaAllocater
         hashTable.SetAddress(blockAddress);
         await hashTable.Initialize(Database);
         Database.Cache.HashTablePool.Enqueue(hashTable);
+        //Database.DebugLogger.WriteLine($"AllocateHashTable {TypeName} MetaRecordAddress({MetaRecordAddress}) {blockAddress}");
         await AddBlockAddressToMetaRecord(blockAddress);
         return blockAddress;
     }
@@ -395,6 +399,7 @@ internal class MetaAllocater
         bool result = false;
         CacheBlockAddresses.Process(() =>
         {
+            //Database.DebugLogger.WriteLine($"ContainsBlockAddress {TypeName} {address} cache {new Json(CacheBlockAddresses.Value.ToArray()).ToString(false)}");
             result = CacheBlockAddresses.Value.Contains(address);
         });
         if (result)
@@ -419,8 +424,16 @@ internal class MetaAllocater
                 {
                     MetaRecord record = new();
                     record.Read(buffer, 0);
+                    //Database.DebugLogger.WriteLine($"ContainsBlockAddress {TypeName} {address} finding {new Json(record.BlockAddresses?.Where(item=>item!=0).ToArray()).ToString(false)}");
                     for (int i = 0; i < record.BlockAddresses!.Length; i++)
                     {
+                        if (record.BlockAddresses[i] != 0)
+                        {
+                            CacheBlockAddresses.Process(() =>
+                            {
+                                CacheBlockAddresses.Value.Add(record.BlockAddresses[i]);
+                            });
+                        }
                         if (record.BlockAddresses[i] == 0)
                         {
                             continue;
@@ -430,6 +443,7 @@ internal class MetaAllocater
                             result = true;
                             break;
                         }
+                        
                     }
                     lastMetaReocrdAddress = record.NextMetaRecordAddress;
                 });
@@ -448,10 +462,6 @@ internal class MetaAllocater
             Database.Cache.MetaBlockPool.Enqueue(metaBlock);
             Database.Cache.StatisticalBlockPool.Enqueue(statisticalBlock);
         }
-        CacheBlockAddresses.Process(() =>
-        {
-            CacheBlockAddresses.Value.Add(address);
-        });
         return result;
     }
 
