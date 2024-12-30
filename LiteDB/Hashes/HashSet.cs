@@ -1,7 +1,9 @@
-﻿using TidyHPC.Common;
+﻿using System.Collections.Concurrent;
+using TidyHPC.Common;
 using TidyHPC.LiteDB.Arrays;
 using TidyHPC.LiteDB.BasicValues;
 using TidyHPC.LiteDB.Blocks;
+using TidyHPC.LiteJson;
 using TidyHPC.Loggers;
 
 namespace TidyHPC.LiteDB.Hashes;
@@ -71,7 +73,7 @@ public class HashTable<THashValue> : ArrayBlock
             Logger.Error($"recordIndex:{recordIndex},globalIndex:{globalIndex},BlockAddress:{Address},RecordCount:{RecordCount},RecordSize:{RecordSize}");
             throw;
         }
-        
+
     }
 
     /// <summary>
@@ -115,13 +117,14 @@ public class HashTable<THashValue> : ArrayBlock
         int recordIndex = GetNodeIndex(globalIndex);
         try
         {
-            await RecordVisitor.UpdateByIndex(db, recordIndex, async buffer =>
+            await RecordVisitor.UpdateByIndex(db, recordIndex, async (buffer) =>
             {
                 var node = new HashNode<THashValue>();
                 node.Read(buffer, 0);
                 if ((await onNode(node)) is (true, HashNode<THashValue> newNode))
                 {
                     newNode.Write(buffer, 0);
+                    //if (IsRecordAddressed) AddToHitNodeAddresses(Address, recordAddress);
                     return true;
                 }
                 return false;
@@ -172,13 +175,13 @@ public class HashTable<THashValue> : ArrayBlock
             {
                 //如果是0，表示已经到了最后一个节点
                 //直接读取数组
-                if(node.ArrayRecordAddress == 0)
+                if (node.ArrayRecordAddress == 0)
                 {
                     break;
                 }
                 var arrayProcessor = new ArrayProcessor<THashValue>(db, node.ArrayRecordAddress);
                 Ref<THashValue> outValue = new(default);
-                if(await arrayProcessor.TryFind(equals, outValue))
+                if (await arrayProcessor.TryFind(equals, outValue))
                 {
                     result.Success = true;
                     result.Value = outValue.Value;
@@ -263,6 +266,125 @@ public class HashTable<THashValue> : ArrayBlock
     }
 
     /// <summary>
+    /// 是否记录地址，用于统计，调试
+    /// </summary>
+    public bool IsRecordAddressed => ToRecordHashSetAddresses.Contains(Address);
+
+    /// <summary>
+    /// 待记录的HashSet地址
+    /// </summary>
+    public static HashSet<long> ToRecordHashSetAddresses { get; } = new();
+
+    /// <summary>
+    /// 命中节点地址
+    /// </summary>
+    public static ConcurrentDictionary<long, HashSet<long>> HitNodeAddresses { get; } = new();
+
+    /// <summary>
+    /// 添加到命中节点地址
+    /// </summary>
+    /// <param name="hashSetAddress"></param>
+    /// <param name="item"></param>
+    public static void AddToHitNodeAddresses(long hashSetAddress, long item)
+    {
+        HitNodeAddresses.GetOrAdd(hashSetAddress, key => new()).Add(item);
+    }
+
+    /// <summary>
+    /// 数组命中次数
+    /// </summary>
+    public static ConcurrentDictionary<long, ConcurrentDictionary<long, int>> ArrayHitCount { get; } = new();
+
+    /// <summary>
+    /// 添加到数组命中次数
+    /// </summary>
+    /// <param name="hashSetAddress"></param>
+    /// <param name="arrayAddress"></param>
+    public static void AddToArrayHitCount(long hashSetAddress, long arrayAddress)
+    {
+        ArrayHitCount.GetOrAdd(hashSetAddress, key => new()).AddOrUpdate(arrayAddress, 1, (key, value) => value + 1);
+    }
+
+    /// <summary>
+    /// 扫描节点地址
+    /// </summary>
+    public static ConcurrentDictionary<long, HashSet<long>> ScanNodeAddresses { get; } = new();
+
+    /// <summary>
+    /// 添加到扫描节点地址
+    /// </summary>
+    /// <param name="hashSetAddress"></param>
+    /// <param name="item"></param>
+    public static void AddToScanNodeAddresses(long hashSetAddress, long item)
+    {
+        ScanNodeAddresses.GetOrAdd(hashSetAddress, (key) => new()).Add(item);
+    }
+
+    /// <summary>
+    /// 扫描数组命中次数
+    /// </summary>
+    public static ConcurrentDictionary<long, ConcurrentDictionary<long, int>> ScanArrayHitCount { get; } = new();
+
+    /// <summary>
+    /// 添加到扫描数组命中次数
+    /// </summary>
+    /// <param name="hashSetAddress"></param>
+    /// <param name="arrayAddress"></param>
+    public static void AddToScanArrayHitCount(long hashSetAddress, long arrayAddress)
+    {
+        ScanArrayHitCount.GetOrAdd(hashSetAddress, key => new()).AddOrUpdate(arrayAddress, 1, (key, value) => value + 1);
+    }
+
+    /// <summary>
+    /// 打印记录
+    /// </summary>
+    /// <param name="db"></param>
+    /// <param name="hashSetAddress"></param>
+    public static void PrintReocrds(Database db,long hashSetAddress)
+    {
+        var hitNodeAddresses = HitNodeAddresses.GetOrAdd(hashSetAddress, (key) => new HashSet<long>());
+        var scanNodeAddresses = ScanNodeAddresses.GetOrAdd(hashSetAddress, (key) => new HashSet<long>());
+        var arrayHitCount = ArrayHitCount.GetOrAdd(hashSetAddress, (key) => new ConcurrentDictionary<long, int>());
+        var scanArrayHitCount = ScanArrayHitCount.GetOrAdd(hashSetAddress, (key) => new ConcurrentDictionary<long, int>());
+        Console.WriteLine($"HashSet:{hashSetAddress}");
+        Console.WriteLine($"HitNodeAddresses:{hitNodeAddresses.Count},ScanNodeAddresses:{scanNodeAddresses.Count}");
+        Console.WriteLine($"ArrayHitCount:{arrayHitCount.Count},ScanArrayHitCount:{scanArrayHitCount.Count}");
+        Console.WriteLine("ArrayHit".PadLeft(20, '-'));
+        foreach (var pair in arrayHitCount)
+        {
+            Console.WriteLine($"ArrayAddress:{pair.Key},HitCount:{pair.Value}");
+        }
+        Console.WriteLine("ScanArrayHit".PadLeft(20, '-'));
+        foreach (var pair in scanArrayHitCount)
+        {
+            Console.WriteLine($"ArrayAddress:{pair.Key},HitCount:{pair.Value}");
+        }
+        var distinct = scanNodeAddresses.Except(hitNodeAddresses);
+        Console.WriteLine(new Json(distinct.ToArray()).ToString());
+    }
+
+    /// <summary>
+    /// 获取记录节点数量
+    /// </summary>
+    /// <param name="db"></param>
+    /// <param name="reocrdAddress"></param>
+    /// <returns></returns>
+    public static async Task PrintRecord(Database db,long reocrdAddress)
+    {
+        HashBlock<THashValue> hashBlock = new();
+        hashBlock.SetByRecordAddress(reocrdAddress);
+        int count = 0;
+        await hashBlock.RecordVisitor.Read(db, reocrdAddress, buffer =>
+        {
+            var hashRecord = new HashRecord<THashValue>(buffer, 0);
+            count = hashRecord.GetNodesCount();
+        });
+        Console.WriteLine($"NodesCount = {count}");
+        Console.WriteLine($"FirstRecordAddress = {hashBlock.FirstRecordAddress}");
+        Console.WriteLine($"BoundarySize = {hashBlock.BoundarySize}");
+    }
+
+    /// <summary>
     /// 添加
     /// </summary>
     /// <param name="db"></param>
@@ -274,7 +396,7 @@ public class HashTable<THashValue> : ArrayBlock
         bool isAdded = false;
         ulong globalIndex = hashCode;
         ulong entryGlobalIndex = globalIndex;
-        HashNode<THashValue> lastNode = new(); 
+        HashNode<THashValue> lastNode = new();
         await UpdateEntry(db, entryGlobalIndex, async item =>
         {
             if (item.HashCode == 0)
@@ -301,11 +423,15 @@ public class HashTable<THashValue> : ArrayBlock
         if (lastNode.NextRecordAddress == 0 || lastNode.ArrayRecordAddress == 0)
         {
             //在while循环中，无法在循环开始时申请完成后反写，所以对于EntryNode进行提前申请反写
-            if(lastNode.NextRecordAddress == 0)
+            if (lastNode.NextRecordAddress == 0)
             {
                 lastNode.NextRecordAddress = await db.AllocateHashRecord<THashValue>();
+                //if (lastNode.NextRecordAddress == 4804685)
+                //{
+                //    Console.WriteLine("lastNode.NextRecordAddress == 4804685");
+                //}
             }
-            if(lastNode.ArrayRecordAddress == 0)
+            if (lastNode.ArrayRecordAddress == 0)
             {
                 lastNode.ArrayRecordAddress = await db.AllocateArrayRecord<THashValue>();
             }
@@ -318,16 +444,16 @@ public class HashTable<THashValue> : ArrayBlock
                     return (true, item);
                 });
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                if(e is ArgumentOutOfRangeException)
+                if (e is ArgumentOutOfRangeException)
                 {
                     Logger.Error($"EntryGlobalIndex:{entryGlobalIndex},LastNode.NextRecordAddress:{lastNode.NextRecordAddress}," +
                         $"LastNode.ArrayRecordAddress:{lastNode.ArrayRecordAddress}");
                 }
                 throw;
             }
-            
+
         }
 
         HashBlock<THashValue> hashBlock = new();
@@ -338,6 +464,7 @@ public class HashTable<THashValue> : ArrayBlock
                 //如果是0，表示已经到了最后一个节点
                 // 此时不会判断ArrayRecordAddress是否为0，因为在EntryNode中或者在上一次循环中已经申请过了
                 var arrayProcessor = new ArrayProcessor<THashValue>(db, lastNode.ArrayRecordAddress);
+                //if (IsRecordAddressed) AddToArrayHitCount(Address, lastNode.ArrayRecordAddress);
                 await arrayProcessor.Add(await onNew());
                 break;
             }
@@ -359,6 +486,7 @@ public class HashTable<THashValue> : ArrayBlock
                             node.Value = await onNew();
                             node.Write(buffer, 0);
                             lastNode = node;
+                            //if (IsRecordAddressed) AddToHitNodeAddresses(Address, currentHashRecordAddress + nodeOffset);
                             return true;
                         }
                         else
@@ -378,14 +506,19 @@ public class HashTable<THashValue> : ArrayBlock
                 {
                     break;
                 }
-                if (lastNode.NextRecordAddress == 0||lastNode.ArrayRecordAddress==0)
+                if (lastNode.NextRecordAddress == 0 || lastNode.ArrayRecordAddress == 0)
                 {
                     //需要新建HashRecord或者ArrayRecord，由下一次循环处理
-                    if(lastNode.NextRecordAddress == 0)
+                    if (lastNode.NextRecordAddress == 0)
                     {
                         lastNode.NextRecordAddress = await db.AllocateHashRecord<THashValue>();
+                        //await PrintRecord(db, lastNode.NextRecordAddress);
+                        //if (lastNode.NextRecordAddress == 4804685)
+                        //{
+                        //    await PrintRecord(db, lastNode.NextRecordAddress);
+                        //}
                     }
-                    if(lastNode.ArrayRecordAddress == 0)
+                    if (lastNode.ArrayRecordAddress == 0)
                     {
                         lastNode.ArrayRecordAddress = await db.AllocateArrayRecord<THashValue>();
                     }
@@ -411,7 +544,7 @@ public class HashTable<THashValue> : ArrayBlock
                 }
                 globalIndex /= HashNode<THashValue>.HashRecordNodeCount;
             }
-            
+
         }
     }
 
@@ -464,9 +597,9 @@ public class HashTable<THashValue> : ArrayBlock
         HashBlock<THashValue> hashBlock = new();
         while (true)
         {
-            if(globalIndex == 0)
+            if (globalIndex == 0)
             {
-                if(lastNode.ArrayRecordAddress == 0)
+                if (lastNode.ArrayRecordAddress == 0)
                 {
                     break;
                 }
@@ -526,7 +659,7 @@ public class HashTable<THashValue> : ArrayBlock
                         $"NodeOffset:{HashRecord<THashValue>.GetNodeOffset(globalIndex)},HashNode.Size:{HashNode<THashValue>.Size}");
                     throw;
                 }
-                
+
                 if (isReplaced)
                 {
                     break;
@@ -547,7 +680,7 @@ public class HashTable<THashValue> : ArrayBlock
     /// <returns></returns>
     public async Task Update(Database db, ulong hashCode, Func<THashValue, Task<bool>> equals, Func<Task<THashValue>> onNew, Func<THashValue, Task<THashValue>>? onUpdate)
     {
-        if(await Contains(db, hashCode, equals))
+        if (await Contains(db, hashCode, equals))
         {
             await Replace(db, hashCode, equals, onUpdate);
         }
@@ -597,7 +730,7 @@ public class HashTable<THashValue> : ArrayBlock
         {
             if (globalIndex == 0)
             {
-                if(node.ArrayRecordAddress==0)
+                if (node.ArrayRecordAddress == 0)
                 {
                     break;
                 }
@@ -642,6 +775,7 @@ public class HashTable<THashValue> : ArrayBlock
             var arrayProcessor = new ArrayProcessor<THashValue>(db, node.ArrayRecordAddress);
             await arrayProcessor.Get(item =>
             {
+                //if (IsRecordAddressed) AddToScanArrayHitCount(Address, node.ArrayRecordAddress);
                 onNode(item);
             });
         }
@@ -654,9 +788,13 @@ public class HashTable<THashValue> : ArrayBlock
             await hashBlock.RecordVisitor.Read(db, node.NextRecordAddress, buffer =>
             {
                 var hashRecord = new HashRecord<THashValue>(buffer, 0);
-                hashRecord.GetNodes(item =>
+                hashRecord.GetNodes((itemIndex, item) =>
                 {
-                    if (item.HashCode != 0) children.Add(item);
+                    if (item.HashCode != 0)
+                    {
+                        //if (IsRecordAddressed) AddToScanNodeAddresses(Address, node.NextRecordAddress + itemIndex * HashNode<THashValue>.Size);
+                        children.Add(item);
+                    }
                 });
             });
             foreach (var item in children)
@@ -676,7 +814,7 @@ public class HashTable<THashValue> : ArrayBlock
     /// <param name="db"></param>
     /// <param name="onItem"></param>
     /// <returns></returns>
-    public async Task GetValues(Database db,Action<THashValue> onItem)
+    public async Task GetValues(Database db, Action<THashValue> onItem)
     {
         var entryCount = RecordCount;
         var hashNodeSize = RecordSize;
@@ -690,6 +828,7 @@ public class HashTable<THashValue> : ArrayBlock
                 if (node.HashCode != 0)
                 {
                     entryNodes.Add(node);
+                    //if (IsRecordAddressed) AddToScanNodeAddresses(Address, FirstRecordAddress + i * hashNodeSize);
                     onItem(node.Value);
                 }
             }
@@ -731,7 +870,7 @@ public class HashTable<THashValue> : ArrayBlock
     /// <param name="hashCode"></param>
     /// <param name="onItem"></param>
     /// <returns></returns>
-    public async Task Get(Database db,ulong hashCode, Action<THashValue> onItem)
+    public async Task Get(Database db, ulong hashCode, Action<THashValue> onItem)
     {
         await Get(db, hashCode, item =>
         {
@@ -868,6 +1007,35 @@ public struct HashRecord<THashValue>(byte[] buffer, int offset)
             node.Read(Buffer, Offset + i * HashNode<THashValue>.Size);
             onNode(node);
         }
+    }
+
+    /// <summary>
+    /// 获取所有节点
+    /// </summary>
+    /// <param name="onNode"></param>
+    /// <returns></returns>
+    public void GetNodes(Action<int, HashNode<THashValue>> onNode)
+    {
+        for (int i = 0; i < HashNode<THashValue>.HashRecordNodeCount; i++)
+        {
+            var node = new HashNode<THashValue>();
+            node.Read(Buffer, Offset + i * HashNode<THashValue>.Size);
+            onNode(i, node);
+        }
+    }
+
+    /// <summary>
+    /// 获取节点数量
+    /// </summary>
+    /// <returns></returns>
+    public int GetNodesCount()
+    {
+        int sum = 0;
+        GetNodes((item) =>
+        {
+            if (item.HashCode != 0) sum++;
+        });
+        return sum;
     }
 }
 

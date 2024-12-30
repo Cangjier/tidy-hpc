@@ -481,6 +481,7 @@ public class Database
         }
         var metaAllocater = await GetMetaAllocater(interfaceName);
         return await metaAllocater.AllocateRecord();
+        
     }
 
     internal async Task<long> AllocateHashTable()
@@ -496,7 +497,13 @@ public class Database
     internal async Task<long> AllocateHashRecord<TValue>()
         where TValue : struct, IValue<TValue>
     {
-        return await AllocateRecord(HashRecord<TValue>.InterfaceName);
+        // 4806061
+        var result = await AllocateRecord(HashRecord<TValue>.InterfaceName);
+        //if (4806061 > result && 4806061 < result + HashRecord<TValue>.Size)
+        //{
+        //    Console.WriteLine($"AllocateHashRecord {result}");
+        //}
+        return result;
     }
 
     /// <summary>
@@ -768,13 +775,10 @@ public class Database
             if (mapType == FieldMapType.Master ||
                 mapType == FieldMapType.Index ||
                 mapType == FieldMapType.IndexArray ||
-                mapType == FieldMapType.IndexHashSet)
+                mapType == FieldMapType.IndexHashSet ||
+                mapType == FieldMapType.IndexSmallHashSet)
             {
                 mapAddresses[i] = await AllocateHashTable();
-            }
-            else if(mapType== FieldMapType.IndexSmallHashSet)
-            {
-                mapAddresses[i] = await AllocateHashRecord<Int64Value>();
             }
         }
         //其次，申请一个MetaDefineRecord

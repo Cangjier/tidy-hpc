@@ -83,7 +83,7 @@ public struct TraceInterface(Json target)
             }
         }
         Success = false;
-        Log(Logger.Levels.Error, message, exception);
+        Log(LoggerFile.Levels.Error, message, exception);
     }
 
     /// <summary>
@@ -93,7 +93,7 @@ public struct TraceInterface(Json target)
     /// <param name="exception"></param>
     public void Info(string? message, Exception? exception=null)
     {
-        Log(Logger.Levels.Info, message, exception);
+        Log(LoggerFile.Levels.Info, message, exception);
     }
 
     /// <summary>
@@ -144,13 +144,13 @@ public struct TraceInterface(Json target)
     /// <param name="popOuterFunctionCount"></param>
     /// <param name="showTrace"></param>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
-    public void Log(Logger.Levels level, string? message, Exception? exception = null, int popOuterFunctionCount = 0, bool showTrace = true)
+    public void Log(LoggerFile.Levels level, string? message, Exception? exception = null, int popOuterFunctionCount = 0, bool showTrace = true)
     {
         Json logger = level switch
         {
-            Logger.Levels.Error => ErrorLogger,
-            Logger.Levels.Info => InfoLogger,
-            Logger.Levels.Debug => DebugLogger,
+            LoggerFile.Levels.Error => ErrorLogger,
+            LoggerFile.Levels.Info => InfoLogger,
+            LoggerFile.Levels.Debug => DebugLogger,
             _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
         };
         if (message != null)

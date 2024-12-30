@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 
 namespace TidyHPC.LiteJson;
 public partial struct Json
@@ -690,7 +689,7 @@ public partial struct Json
     public int Read(string key, int defaultValue)
     {
         var result = Get(key, Null);
-        return result.IsNull ? defaultValue : result.AsInt32;
+        return result.IsNull ? defaultValue : result.ToInt32;
     }
 
     /// <summary>

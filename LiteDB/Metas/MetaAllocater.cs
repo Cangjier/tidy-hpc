@@ -284,6 +284,10 @@ internal class MetaAllocater
                 if (await statisticalBlock.ContainsUnused(Database))
                 {
                     var address = await statisticalBlock.AllocateRecord(Database);
+                    //if(address == 4804685)
+                    //{
+
+                    //}
                     //用完之后，将地址放回队列
                     BlockQueue.Enqueue(blockAddress);
                     if (address.HasValue)

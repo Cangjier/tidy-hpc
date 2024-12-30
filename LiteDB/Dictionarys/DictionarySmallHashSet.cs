@@ -46,6 +46,7 @@ internal class DictionarySmallHashSet<TKey, TValue> : IDictionaryHashSet<TValue>
             outValue.Value = await Database.AllocateHashRecord<TValue>();
             await Dictionary.Set(key, outValue.Value);
             valueHashTable.SetAddress(outValue.Value);
+            //HashTable<TValue>.ToRecordHashSetAddresses.Add(outValue.Value);
         }
         await valueHashTable.TryAdd(Database, await value.GetHashCode(Database), async item =>
         {

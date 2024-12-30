@@ -112,7 +112,10 @@ public class StatisticalBlock:Block
         });
         //await RecordRegionVisitor.Write(table, buffer =>
         //{
-        //    //数据不进行擦除
+        //    for (int i = 0; i < RecordRegionSize; i++)
+        //    {
+        //        buffer[i] = 0;
+        //    }
         //});
     }
     #endregion
@@ -191,6 +194,7 @@ public class StatisticalBlock:Block
         {
             return null;
         }
+
         return FirstRecordAddress + index * RecordSize;
     }
 

@@ -100,7 +100,7 @@ public class NetMessageInterface(Json target):IDisposable
             this.message = message;
         }
         success = false;
-        Trace.Log(Logger.Levels.Error, message, exception, popOuterFunctionCount);
+        Trace.Log(LoggerFile.Levels.Error, message, exception, popOuterFunctionCount);
     }
 
     /// <summary>
@@ -120,7 +120,7 @@ public class NetMessageInterface(Json target):IDisposable
             this.message = message;
         }
         success = false;
-        Trace.Log(Logger.Levels.Error, message, exception);
+        Trace.Log(LoggerFile.Levels.Error, message, exception);
     }
 
     /// <summary>
@@ -140,7 +140,7 @@ public class NetMessageInterface(Json target):IDisposable
     public void Info(string message)
     {
         this.message = message;
-        Trace.Log(Logger.Levels.Info, message);
+        Trace.Log(LoggerFile.Levels.Info, message);
     }
 
     /// <summary>

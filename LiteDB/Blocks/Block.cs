@@ -306,8 +306,21 @@ internal static class BlockUtil
         await onBuffer(cache, cacheOffset);
     }
 
+    //internal static void CheckInRange(long address,long rangeCenter,int range)
+    //{
+    //    if(address== 4806061)
+    //    {
+
+    //    }
+    //    if(rangeCenter-range < address && address < rangeCenter + range)
+    //    {
+    //        Console.WriteLine($"address={address},rangeCenter={rangeCenter},range={range}");
+    //    }    
+    //}
+
     internal static async Task ProcessWrite(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[]> onBuffer)
     {
+        //CheckInRange(address, 4806061, HashNode<Int64Value>.Size);
         var buffer = await table.Cache.DequeueBuffer(bufferSize);
         onBuffer(buffer);
         await address.BeginWrite(semaphore);
@@ -318,6 +331,7 @@ internal static class BlockUtil
 
     internal static async Task ProcessWrite(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[],Task> onBuffer)
     {
+        //CheckInRange(address, 4806061, HashNode<Int64Value>.Size);
         var buffer = await table.Cache.DequeueBuffer(bufferSize);
         await onBuffer(buffer);
         await address.BeginWrite(semaphore);
@@ -328,6 +342,7 @@ internal static class BlockUtil
 
     internal static async Task ProcessWriteSpan(Database table, long address, int spanOffset, int spanSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[]> onBuffer)
     {
+        //CheckInRange(address+spanOffset, 4806061, HashNode<Int64Value>.Size);
         var buffer = await table.Cache.DequeueBuffer(spanSize);
         onBuffer(buffer);
         await address.BeginWrite(semaphore);
@@ -338,6 +353,7 @@ internal static class BlockUtil
 
     internal static async Task ProcessWriteSpan(Database table, long address, int spanOffset, int spanSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[],Task> onBuffer)
     {
+        //CheckInRange(address+spanOffset, 4806061, HashNode<Int64Value>.Size);
         var buffer = await table.Cache.DequeueBuffer(spanSize);
         await onBuffer(buffer);
         await address.BeginWrite(semaphore);
@@ -348,6 +364,7 @@ internal static class BlockUtil
 
     internal static async Task ProcessWriteWithCache(Database table, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Action<byte[], int> onBuffer)
     {
+        //CheckInRange(address, 4806061, HashNode<Int64Value>.Size);
         await address.BeginWrite(semaphore);
         var cacheOffset = (int)(address - cacheAddress);
         table.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool _);
@@ -362,6 +379,7 @@ internal static class BlockUtil
 
     internal static async Task ProcessWriteWithCache(Database table, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], int,Task> onBuffer)
     {
+        //CheckInRange(address, 4806061, HashNode<Int64Value>.Size);
         await address.BeginWrite(semaphore);
         var cacheOffset = (int)(address - cacheAddress);
         table.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool _);
@@ -377,6 +395,7 @@ internal static class BlockUtil
     internal static async Task ProcessUpdate(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], bool> onBuffer)
     {
         //table.DebugLogger.WriteLine($"ProcessUpdate {address} {bufferSize}");
+        //CheckInRange(address, 4806061, HashNode<Int64Value>.Size);
         var buffer = await table.Cache.DequeueBuffer(bufferSize);
         await address.BeginRead(semaphore);
         await table.FileStream.ReadAsync(address, buffer, 0, bufferSize);
@@ -392,6 +411,7 @@ internal static class BlockUtil
 
     internal static async Task ProcessUpdate(Database table, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task<bool>> onBuffer)
     {
+        //CheckInRange(address, 4806061, HashNode<Int64Value>.Size);
         var buffer = await table.Cache.DequeueBuffer(bufferSize);
         await address.BeginRead(semaphore);
         await table.FileStream.ReadAsync(address, buffer, 0, bufferSize);
@@ -407,6 +427,7 @@ internal static class BlockUtil
 
     internal static async Task ProcessUpdateSpan(Database table, long address, int spanOffset, int spanSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], Task<bool>> onBuffer)
     {
+        //CheckInRange(address+spanOffset, 4806061, HashNode<Int64Value>.Size);
         var buffer = await table.Cache.DequeueBuffer(spanSize);
         await address.BeginRead(semaphore);
         await table.FileStream.ReadAsync(address + spanOffset, buffer, 0, spanSize);
@@ -422,6 +443,7 @@ internal static class BlockUtil
 
     internal static async Task ProcessUpdateSpan(Database table, long address, int spanOffset, int spanSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], bool> onBuffer)
     {
+        //CheckInRange(address+spanOffset, 4806061, HashNode<Int64Value>.Size);
         var buffer = await table.Cache.DequeueBuffer(spanSize);
         await address.BeginRead(semaphore);
         await table.FileStream.ReadAsync(address + spanOffset, buffer, 0, spanSize);
@@ -437,6 +459,7 @@ internal static class BlockUtil
 
     internal static async Task ProcessUpdateWithCache(Database table, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], int, bool> onBuffer)
     {
+        //CheckInRange(address, 4806061, HashNode<Int64Value>.Size);
         await address.BeginRead(semaphore);
         var cacheOffset = (int)(address - cacheAddress);
         table.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool first);
@@ -455,6 +478,7 @@ internal static class BlockUtil
 
     internal static async Task ProcessUpdateWithCache(Database table, long cacheAddress, int cacheSize, long address, int bufferSize, ReaderWriterSemaphorePool<long> semaphore, Func<byte[], int, Task<bool>> onBuffer)
     {
+        //CheckInRange(address, 4806061, HashNode<Int64Value>.Size);
         await address.BeginRead(semaphore);
         var cacheOffset = (int)(address - cacheAddress);
         table.Cache.IOCache.UseCache(cacheAddress, cacheSize, out byte[] cache, out bool first);

@@ -177,6 +177,13 @@ public partial struct Json
             if (tType == typeof(TimeSpan)) return (T)(object)TimeSpan.Parse(nodeString);
             if (tType == typeof(Uri)) return (T)(object)new Uri(nodeString);
         }
+        if (tType == typeof(int))
+        {
+            if (Node is double nodeDouble) return (T)(object)(int)nodeDouble;
+            if (Node is long nodeLong) return (T)(object)(int)nodeLong;
+            if (Node is float nodeFloat) return (T)(object)(int)nodeFloat;
+            if (Node is decimal nodeDecimal) return (T)(object)(int)nodeDecimal;
+        }
         
         
         throw new Exception("Can't convert to " + tType.Name);

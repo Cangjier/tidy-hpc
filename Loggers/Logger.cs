@@ -1,4 +1,5 @@
 ﻿using TidyHPC.LiteJson;
+using static TidyHPC.Loggers.LoggerFile;
 
 namespace TidyHPC.Loggers;
 
@@ -8,47 +9,36 @@ namespace TidyHPC.Loggers;
 public class Logger
 {
     /// <summary>
-    /// Log level
+    /// 日志文件
     /// </summary>
-    public enum Levels
-    {
-        /// <summary>
-        /// Log all
-        /// </summary>
-        Debug,
-        /// <summary>
-        /// Log info and above
-        /// </summary>
-        Info,
-        /// <summary>
-        /// Log error and above
-        /// </summary>
-        Error,
-        /// <summary>
-        /// Log fatal only
-        /// </summary>
-        None
-    }
+    public static LoggerFile LoggerFile { get; } = new();
 
     /// <summary>
     /// The log level
     /// </summary>
-    public static Levels Level { get; set; } = Levels.Debug;
+    public static Levels Level
+    {
+        get=> LoggerFile.Level;
+        set => LoggerFile.Level = value;
+    }
 
     /// <summary>
     /// The length of the parameter
     /// </summary>
-    public static int ParameterKeyLength { get; set; } = 32;
-
-    /// <summary>
-    /// The log queue
-    /// </summary>
-    public static QueueLogger QueueLogger { get; } = new QueueLogger();
+    public static int ParameterKeyLength
+    {
+        get => LoggerFile.ParameterKeyLength;
+        set => LoggerFile.ParameterKeyLength = value;
+    }
 
     /// <summary>
     /// Machine name
     /// </summary>
-    public static string MachineName { get; set; } = Environment.MachineName;
+    public static string MachineName
+    {
+        get => LoggerFile.MachineName;
+        set => LoggerFile.MachineName = value;
+    }
 
     /// <summary>
     /// Format the log message
@@ -58,9 +48,7 @@ public class Logger
     /// <param name="excetion"></param>
     /// <returns></returns>
     private static string Format(Levels level, string message, Exception? excetion)
-    {
-        return string.Format("[{0}] {1} [{2}] {3} {4}", MachineName, DateTime.Now.ToString("O"), level, message, excetion);
-    }
+        => LoggerFile.Format(level, message, excetion);
 
     /// <summary>
     /// Format the log message
@@ -69,58 +57,41 @@ public class Logger
     /// <param name="excetion"></param>
     /// <returns></returns>
     private static string Format(Levels level, Exception? excetion)
-    {
-        return string.Format("[{0}] {1} [{2}] {3}", MachineName, DateTime.Now.ToString("O"), level, excetion);
-    }
+        => LoggerFile.Format(level, excetion);
 
     private static string FormatParameter(string key, string value)
-    {
-        return key + ' '.Repeat(ParameterKeyLength - key.Length) + "=" + value;
-    }
+        => LoggerFile.FormatParameter(key, value);
 
     private static string FormatLinear(string value)
-    {
-        int next = ParameterKeyLength * 2 - value.Length;
-        int half = next / 2;
-        return '-'.Repeat(next - half) + value + '-'.Repeat(half);
-    }
+        => LoggerFile.FormatLinear(value);
 
     /// <summary>
     /// 日志路径
     /// </summary>
     public static string FilePath
     {
-        get => QueueLogger.FilePath;
-        set => QueueLogger.FilePath = value;
+        get => LoggerFile.FilePath;
+        set => LoggerFile.FilePath = value;
     }
 
     /// <summary>
     /// Write line
     /// </summary>
     /// <param name="message"></param>
-    public static void WriteLine(object? message)
-    {
-        QueueLogger.WriteLine(message?.ToString() ?? string.Empty);
-    }
+    public static void WriteLine(object? message) => LoggerFile.WriteLine(message);
 
     /// <summary>
     /// Error
     /// </summary>
     /// <param name="message"></param>
     /// <param name="exception"></param>
-    public static void Error(string message, Exception? exception = null)
-    {
-        QueueLogger.WriteLine(Format(Levels.Error, message, exception));
-    }
+    public static void Error(string message, Exception? exception = null) => LoggerFile.Error(message, exception);
 
     /// <summary>
     /// Error
     /// </summary>
     /// <param name="exception"></param>
-    public static void Error(Exception? exception)
-    {
-        QueueLogger.WriteLine(Format(Levels.Error, exception));
-    }
+    public static void Error(Exception? exception) => LoggerFile.Error(exception);
 
     /// <summary>
     /// Error parameter
@@ -128,10 +99,7 @@ public class Logger
     /// <param name="key"></param>
     /// <param name="value"></param>
     /// <param name="exception"></param>
-    public static void ErrorParameter(string key, string value, Exception? exception = null)
-    {
-        Error(FormatParameter(key, value), exception);
-    }
+    public static void ErrorParameter(string key, string value, Exception? exception = null) => LoggerFile.ErrorParameter(key, value, exception);
 
     /// <summary>
     /// Error parameters
@@ -140,10 +108,7 @@ public class Logger
     /// <param name="parameters"></param>
     /// <param name="exception"></param>
     public static void ErrorParameters(string message, Json parameters, Exception? exception = null)
-    {
-        Error(message, exception);
-        QueueLogger.WriteLine(parameters.ToString(true));
-    }
+        => LoggerFile.ErrorParameters(message, parameters, exception);
 
     /// <summary>
     /// Error linear
@@ -151,9 +116,7 @@ public class Logger
     /// <param name="message"></param>
     /// <param name="exception"></param>
     public static void ErrorLinear(string message, Exception? exception = null)
-    {
-        Error(FormatLinear(message), exception);
-    }
+        => LoggerFile.ErrorLinear(message, exception);
 
     /// <summary>
     /// Info
@@ -161,17 +124,13 @@ public class Logger
     /// <param name="message"></param>
     /// <param name="exception"></param>
     public static void Info(string message, Exception? exception = null)
-    {
-        QueueLogger.WriteLine(Format(Levels.Info, message, exception));
-    }
+        => LoggerFile.Info(message, exception);
 
     /// <summary>
     /// Info linear
     /// </summary>
     public static void InfoLinear()
-    {
-        Info(FormatLinear(string.Empty), null);
-    }
+        => LoggerFile.InfoLinear();
 
     /// <summary>
     /// Info linear
@@ -179,9 +138,7 @@ public class Logger
     /// <param name="message"></param>
     /// <param name="exception"></param>
     public static void InfoLinear(string message, Exception? exception = null)
-    {
-        Info(FormatLinear(message), exception);
-    }
+        => LoggerFile.InfoLinear(message, exception);
 
     /// <summary>
     /// Info parameter
@@ -190,9 +147,7 @@ public class Logger
     /// <param name="value"></param>
     /// <param name="exception"></param>
     public static void InfoParameter(string key, string value, Exception? exception = null)
-    {
-        Info(FormatParameter(key, value), exception);
-    }
+        => LoggerFile.InfoParameter(key, value, exception);
 
     /// <summary>
     /// Info parameters
@@ -201,10 +156,7 @@ public class Logger
     /// <param name="parameters"></param>
     /// <param name="exception"></param>
     public static void InfoParameters(string message, Json parameters, Exception? exception = null)
-    {
-        Info(message, exception);
-        QueueLogger.WriteLine(parameters.ToString(true));
-    }
+        => LoggerFile.InfoParameters(message, parameters, exception);
 
     /// <summary>
     /// Info parameters
@@ -212,10 +164,7 @@ public class Logger
     /// <param name="parameters"></param>
     /// <param name="exception"></param>
     public static void InfoParameters(Json parameters, Exception? exception = null)
-    {
-        Info(string.Empty, exception);
-        QueueLogger.WriteLine(parameters.ToString(true));
-    }
+        => LoggerFile.InfoParameters(parameters, exception);
 
     /// <summary>
     /// Debug
@@ -223,9 +172,7 @@ public class Logger
     /// <param name="message"></param>
     /// <param name="exception"></param>
     public static void Debug(string message, Exception? exception = null)
-    {
-        QueueLogger.WriteLine(Format(Levels.Debug, message, exception));
-    }
+        => LoggerFile.Debug(message, exception);
 
     /// <summary>
     /// Debug parameter
@@ -234,9 +181,7 @@ public class Logger
     /// <param name="value"></param>
     /// <param name="exception"></param>
     public static void DebugParameter(string key, string value, Exception? exception = null)
-    {
-        Debug(FormatParameter(key, value), exception);
-    }
+        => LoggerFile.DebugParameter(key, value, exception);
 
     /// <summary>
     /// Debug parameters
@@ -245,10 +190,7 @@ public class Logger
     /// <param name="parameters"></param>
     /// <param name="exception"></param>
     public static void DebugParameters(string message,Json parameters,Exception? exception = null)
-    {
-        Debug(message, exception);
-        QueueLogger.WriteLine(parameters.ToString(true));
-    }
+        => LoggerFile.DebugParameters(message, parameters, exception);
 
     /// <summary>
     /// Debug parameters
@@ -256,10 +198,7 @@ public class Logger
     /// <param name="parameters"></param>
     /// <param name="exception"></param>
     public static void DebugParameters(Json parameters, Exception? exception = null)
-    {
-        Debug(string.Empty, exception);
-        QueueLogger.WriteLine(parameters.ToString(true));
-    }
+        => LoggerFile.DebugParameters(parameters, exception);
 
     /// <summary>
     /// Debug linear
@@ -267,7 +206,5 @@ public class Logger
     /// <param name="message"></param>
     /// <param name="exception"></param>
     public static void DebugLinear(string message, Exception? exception = null)
-    {
-        Debug(FormatLinear(message), exception);
-    }
+        => LoggerFile.DebugLinear(message, exception);
 }
