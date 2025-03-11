@@ -306,7 +306,7 @@ public static class StringExtensions
         else
         {
             to = null;
-            throw new NotSupportedException();
+            return false;
         }
     }
 

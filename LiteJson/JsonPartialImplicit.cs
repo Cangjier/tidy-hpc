@@ -386,6 +386,11 @@ public partial struct Json
     /// <summary>
     /// 隐式转换代理，用于Script
     /// </summary>
+    public static Func<Json, Type, object?>? ImplicitTo { get; set; }
+
+    /// <summary>
+    /// 隐式转换代理，用于Script
+    /// </summary>
     /// <param name="value"></param>
     /// <param name="toType"></param>
     /// <returns></returns>
@@ -394,8 +399,8 @@ public partial struct Json
     {
         if (toType == typeof(string) && value.IsString == false) return value.ToString();
         else if (toType == typeof(bool) && value.IsString) return value.AsString == "true" ? true : false;
-        else if (toType == typeof(int)) return value.AsInt32;
-        else if (toType == typeof(float)) return value.AsFloat;
+        else if (toType == typeof(int)) return value.ToInt32;
+        else if (toType == typeof(float)) return value.ToFloat;
         else if (toType == typeof(double)) return value.AsDouble;
         else if (toType == typeof(long)) return value.AsInt64;
         else if (toType == typeof(Guid)) return value.AsGuid;
@@ -471,6 +476,10 @@ public partial struct Json
                 }
             }
             return result;
+        }
+        else if (ImplicitTo != null)
+        {
+            return ImplicitTo(value, toType);
         }
         else return value.Node;
     }

@@ -1003,7 +1003,8 @@ public class Database
         {
             await Cache.DictionaryVisitor.GetSmallHashSet(indexField, mappingHashTableAddress, indexValue, values.Add);
         }
-        Logger.WriteLine($"indexset {interfaceName} {indexName} {indexValue} {new Json(values).ToString(false)}");
+        Logger.WriteLine($"indexset {interfaceName} {indexName} {new Json(indexValue).ToString(false)} {new Json(values).ToString(false)}");
+        values = values.Distinct().Where(x => x != 0).ToList();
         return [.. values];
     }
 

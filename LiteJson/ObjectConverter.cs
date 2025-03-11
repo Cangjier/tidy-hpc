@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text;
 using System.Diagnostics;
+using System.Collections;
 
 namespace TidyHPC.LiteJson;
 
@@ -157,7 +158,7 @@ public class UnsupportedConverter : JsonConverter<object>
         {
             return true;
         }
-        else if (typeToConvert == typeof(Encoding)||typeToConvert==typeof(Process))
+        else if (typeToConvert == typeof(Encoding) || typeToConvert == typeof(Process))
         {
             return true;
         }
@@ -166,6 +167,14 @@ public class UnsupportedConverter : JsonConverter<object>
             return true;
         }
         else if (typeToConvert.FullName?.StartsWith("System.Runtime.CompilerServices.AsyncTaskMethodBuilder") == true)
+        {
+            return true;
+        }
+        else if (typeToConvert.IsGenericType && typeToConvert.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+        {
+            return true;
+        }
+        else if(typeToConvert.IsGenericType && typeToConvert.GetGenericTypeDefinition() == typeof(List<>))
         {
             return true;
         }
@@ -193,12 +202,63 @@ public class UnsupportedConverter : JsonConverter<object>
     /// <param name="options"></param>
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
-        if (value is Type type)
+        var valueType = value?.GetType();
+        if(value is null)
+        {
+            writer.WriteNullValue();
+        }
+        else if (valueType?.IsGenericType == true && valueType?.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+        {
+            var dictionary = (IDictionary)value!;
+            writer.WriteStartObject();
+            foreach (DictionaryEntry entry in dictionary)
+            {
+                if (entry.Value is string valueString && valueString == Json.Undefined.AsString)
+                {
+                    continue;
+                }
+                else if (entry.Value is Json jsonValue && jsonValue.IsUndefined)
+                {
+                    continue;
+                }
+                writer.WritePropertyName(entry.Key.ToString() ?? "");
+                JsonSerializer.Serialize(writer, entry.Value, options);
+            }
+            writer.WriteEndObject();
+        }
+        else if(valueType?.IsGenericType==true && valueType.GetGenericTypeDefinition() == typeof(List<>))
+        {
+            var list = (IList)value!;
+            writer.WriteStartArray();
+            foreach (var item in list)
+            {
+                if(item is Json jsonValue && jsonValue.IsUndefined)
+                {
+                    writer.WriteNullValue();
+                }
+                else
+                {
+                    JsonSerializer.Serialize(writer, item, options);
+                }
+            }
+            writer.WriteEndArray();
+        }
+        else if (value is Type type)
             writer.WriteStringValue(type.FullName);
         else if (value is MulticastDelegate delegateValue)
             writer.WriteStringValue("[method]");
         else if (value is Json json)
+        {
             JsonSerializer.Serialize(writer, json.Node, options);
+            //if (json.IsUndefined)
+            //{
+            //    writer.WriteNullValue();
+            //}
+            //else
+            //{
+            //    JsonSerializer.Serialize(writer, json.Node, options);
+            //}
+        }
         else if (value is System.Reflection.MemberInfo member)
         {
             writer.WriteStartObject();

@@ -14,7 +14,7 @@ public partial struct Json
     {
         get
         {
-            return Get(index);
+            return Get(index, Undefined);
         }
         set
         {
@@ -304,7 +304,7 @@ public partial struct Json
     /// 添加一个object
     /// </summary>
     /// <param name="item"></param>
-    public void Add(object item)
+    public void Add(object? item)
     {
         AssertArray(self => self.Add(item));
     }
@@ -535,5 +535,39 @@ public partial struct Json
         });
         return new(result);
     }
+
+    /// <summary>
+    /// 拼接数组
+    /// </summary>
+    /// <param name="items"></param>
+    /// <returns></returns>
+    public Json Concat(params Json[] items)
+    {
+        List<object?>? result = null;
+        AssertArray(self =>
+        {
+            result = self.Concat(items);
+        });
+        return new(result);
+    }
+
+    /// <summary>
+    /// 移除
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    /// <exception cref="IndexOutOfRangeException"></exception>
+    public void RemoveAt(int index)
+    {
+        AssertArray(self =>
+        {
+            if (index < 0 || index >= self.Count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+            self.RemoveAt(index);
+        });
+    }
+
     #endregion
 }

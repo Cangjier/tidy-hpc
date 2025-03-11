@@ -179,14 +179,43 @@ public partial struct Json
         }
         if (tType == typeof(int))
         {
+            if (Node is Int16 nodeInt16) return (T)(object)(int)nodeInt16;
+            if (Node is byte nodeByte) return (T)(object)(int)nodeByte;
             if (Node is double nodeDouble) return (T)(object)(int)nodeDouble;
             if (Node is long nodeLong) return (T)(object)(int)nodeLong;
             if (Node is float nodeFloat) return (T)(object)(int)nodeFloat;
             if (Node is decimal nodeDecimal) return (T)(object)(int)nodeDecimal;
         }
-        
-        
-        throw new Exception("Can't convert to " + tType.Name);
+        if (tType == typeof(long))
+        {
+            if (Node is Int16 nodeInt16) return (T)(object)(long)nodeInt16;
+            if (Node is byte nodeByte) return (T)(object)(long)nodeByte;
+            if (Node is double nodeDouble) return (T)(object)(long)nodeDouble;
+            if (Node is int nodeInt) return (T)(object)(long)nodeInt;
+            if (Node is float nodeFloat) return (T)(object)(long)nodeFloat;
+            if (Node is decimal nodeDecimal) return (T)(object)(long)nodeDecimal;
+        }
+        if (tType == typeof(float))
+        {
+            if (Node is Int16 nodeInt16) return (T)(object)(float)nodeInt16;
+            if (Node is byte nodeByte) return (T)(object)(float)nodeByte;
+            if (Node is double nodeDouble) return (T)(object)(float)nodeDouble;
+            if (Node is int nodeInt) return (T)(object)(float)nodeInt;
+            if (Node is long nodeLong) return (T)(object)(float)nodeLong;
+            if (Node is decimal nodeDecimal) return (T)(object)(float)nodeDecimal;
+        }
+        if (tType == typeof(double))
+        {
+            if (Node is Int16 nodeInt16) return (T)(object)(double)nodeInt16;
+            if (Node is byte nodeByte) return (T)(object)(double)nodeByte;
+            if (Node is float nodeFloat) return (T)(object)(double)nodeFloat;
+            if (Node is int nodeInt) return (T)(object)(double)nodeInt;
+            if (Node is long nodeLong) return (T)(object)(double)nodeLong;
+            if (Node is decimal nodeDecimal) return (T)(object)(double)nodeDecimal;
+        }
+
+
+        throw new Exception($"Can't convert {Node?.GetType().Name} to " + tType.Name);
     }
 
     /// <summary>
@@ -233,6 +262,7 @@ public partial struct Json
 
     }
 
+
     /// <summary>
     /// Is Int64
     /// </summary>
@@ -254,6 +284,30 @@ public partial struct Json
     public readonly float AsFloat => As<float>();
 
     /// <summary>
+    /// Convert to Float
+    /// </summary>
+    public readonly float ToFloat
+    {
+        get
+        {
+            if (IsString)
+            {
+                return float.Parse(AsString);
+            }
+            else if (IsInt32) return AsInt32;
+            else if (IsNumber)
+            {
+                return (float)AsNumber;
+            }
+            else
+            {
+                throw new Exception("Can't convert to Float");
+            }
+        }
+
+    }
+
+    /// <summary>
     /// Is Double
     /// </summary>
     public readonly bool IsDouble => Is<double>();
@@ -262,6 +316,29 @@ public partial struct Json
     /// If self is Number, get the value of Number as decimal
     /// </summary>
     public readonly double AsDouble => As<double>();
+
+    /// <summary>
+    /// Convert to Double
+    /// </summary>
+    public readonly double ToDouble
+    {
+        get
+        {
+            if (IsString)
+            {
+                return double.Parse(AsString);
+            }
+            else if (IsNumber)
+            {
+                return AsNumber;
+            }
+            else
+            {
+                throw new Exception("Can't convert to Float32");
+            }
+        }
+
+    }
 
     /// <summary>
     /// Is Boolean

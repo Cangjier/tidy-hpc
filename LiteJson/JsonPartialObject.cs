@@ -671,6 +671,26 @@ public partial struct Json
     /// <summary>
     /// Read the value, if not exist, return default value
     /// </summary>
+    /// <param name="keys"></param>
+    /// <param name="defaultValue"></param>
+    /// <returns></returns>
+    public string ReadWithKeys(string[] keys, string defaultValue)
+    {
+        if (!IsObject) return defaultValue;
+        var obj = AsObject;
+        foreach (var key in keys)
+        {
+            if (obj.ContainsKey(key))
+            {
+                return new Json(obj[key]).AsString;
+            }
+        }
+        return defaultValue;
+    }
+
+    /// <summary>
+    /// Read the value, if not exist, return default value
+    /// </summary>
     /// <param name="key"></param>
     /// <param name="defaultValue"></param>
     /// <returns></returns>

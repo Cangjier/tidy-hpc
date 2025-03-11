@@ -136,6 +136,22 @@ public struct ArrayWrapper(object? target):IDisposable,IEnumerable<object?>
     }
 
     /// <summary>
+    /// 移除
+    /// </summary>
+    /// <param name="index"></param>
+    /// <exception cref="NotImplementedException"></exception>
+    public void RemoveAt(int index)
+    {
+        if (Target is IList list) list.RemoveAt(index);
+        else if (Target is Array array)
+        {
+            throw new NotImplementedException();
+        }
+        else if (Target is JsonArray jsonArray) jsonArray.RemoveAt(index);
+        else throw new NotImplementedException();
+    }
+
+    /// <summary>
     /// 批量添加元素
     /// </summary>
     /// <param name="items"></param>
@@ -395,6 +411,61 @@ public struct ArrayWrapper(object? target):IDisposable,IEnumerable<object?>
         {
             throw new InvalidOperationException("ArrayWrapper: reverse only support list type");
         }
+    }
+
+    /// <summary>
+    /// 拼接数组
+    /// </summary>
+    /// <param name="items"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public List<object?> Concat(params Json[] items)
+    {
+        List<object?> result = new();
+        if (Target is List<object?> listObjects)
+        {
+            result.AddRange(listObjects);
+        }
+        else if (Target is IList list)
+        {
+            foreach (var item in list)
+            {
+                result.Add(item);
+            }
+        }
+        else if (Target is Array array)
+        {
+            foreach (var item in array)
+            {
+                result.Add(item);
+            }
+        }
+        else if (Target is JsonArray jsonArray)
+        {
+            foreach (var item in jsonArray)
+            {
+                result.Add(item);
+            }
+        }
+        else
+        {
+            throw new InvalidOperationException("ArrayWrapper: concat only support list type");
+        }
+        foreach (var item in items)
+        {
+            if (item.IsArray)
+            {
+                foreach (var subItem in item)
+                {
+                    result.Add(subItem.Node);
+                }
+            }
+            else
+            {
+                result.Add(item.Node);
+            }
+        }
+        return result;
     }
 
     /// <summary>
