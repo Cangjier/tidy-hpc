@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
+using TidyHPC.SeniorExtensions;
 
 namespace TidyHPC.LiteJson;
 public partial struct Json
@@ -27,7 +28,7 @@ public partial struct Json
     /// Implicit convert JsonObject to JsonNode
     /// </summary>
     /// <param name="value"></param>
-    public static implicit operator Json(Dictionary<string,object?>? value) => new(value);
+    public static implicit operator Json(Dictionary<string, object?>? value) => new(value);
 
     /// <summary>
     /// Implicit convert List to Json
@@ -395,7 +396,7 @@ public partial struct Json
     /// <param name="toType"></param>
     /// <returns></returns>
     /// <exception cref="NullReferenceException"></exception>
-    public static object? op_ImplicitTo(Json value,Type toType)
+    public static object? op_ImplicitTo(Json value, Type toType)
     {
         if (toType == typeof(string) && value.IsString == false) return value.ToString();
         else if (toType == typeof(bool) && value.IsString) return value.AsString == "true" ? true : false;
@@ -476,6 +477,14 @@ public partial struct Json
                 }
             }
             return result;
+        }
+        else if (value.Node != null && value.Node.GetType().TryAssignTo(value.Node, toType, out var tryAssignResult))
+        {
+            return tryAssignResult;
+        }
+        else if (typeof(Json).TryAssignTo(value, toType, out var tryAssignResult2))
+        {
+            return tryAssignResult2;
         }
         else if (ImplicitTo != null)
         {
