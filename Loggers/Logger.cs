@@ -11,14 +11,24 @@ public class Logger
     /// <summary>
     /// 日志文件
     /// </summary>
-    public static LoggerFile LoggerFile { get; } = new();
+    public static LoggerFile LoggerFile { get; private set; } = new();
+
+    /// <summary>
+    /// Set logger file
+    /// </summary>
+    /// <param name="loggerFile"></param>
+    public static void SetLoggerFile(LoggerFile loggerFile)
+    {
+        LoggerFile.Dispose();
+        LoggerFile = loggerFile;
+    }
 
     /// <summary>
     /// The log level
     /// </summary>
     public static Levels Level
     {
-        get=> LoggerFile.Level;
+        get => LoggerFile.Level;
         set => LoggerFile.Level = value;
     }
 
@@ -189,7 +199,7 @@ public class Logger
     /// <param name="message"></param>
     /// <param name="parameters"></param>
     /// <param name="exception"></param>
-    public static void DebugParameters(string message,Json parameters,Exception? exception = null)
+    public static void DebugParameters(string message, Json parameters, Exception? exception = null)
         => LoggerFile.DebugParameters(message, parameters, exception);
 
     /// <summary>
