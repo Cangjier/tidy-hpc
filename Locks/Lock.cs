@@ -53,6 +53,19 @@ public class Lock<TValue>(TValue value)
     }
 
     /// <summary>
+    /// 锁定并处理值
+    /// </summary>
+    /// <param name="onProcess"></param>
+    /// <returns></returns>
+    public TResult Process<TResult>(Func<TValue, TResult> onProcess)
+    {
+        lock (locker)
+        {
+            return onProcess(Value);
+        }
+    }
+
+    /// <summary>
     /// 设置值
     /// </summary>
     /// <param name="value"></param>
