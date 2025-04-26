@@ -25,6 +25,10 @@ public class QueueLogger:IDisposable
         LinesQueue.AddProcessor(async line =>
         {
             await File.AppendAllLinesAsync(FilePath, [line]);
+            if (EnableWriteToStandardOutpuStream)
+            {
+                Console.WriteLine(line);
+            }
             if (OnLine != null)
             {
                 await OnLine(line);
@@ -37,6 +41,11 @@ public class QueueLogger:IDisposable
     /// 日志写入路径
     /// </summary>
     public string FilePath { get; set; }
+
+    /// <summary>
+    /// 是否写入标准输出流
+    /// </summary>
+    public bool EnableWriteToStandardOutpuStream { get; set; } = false;
 
     /// <summary>
     /// 当有新行时

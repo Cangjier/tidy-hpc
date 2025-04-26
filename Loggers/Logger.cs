@@ -85,6 +85,15 @@ public class Logger
     }
 
     /// <summary>
+    /// 是否写入标准输出流
+    /// </summary>
+    public static bool EnableWriteToStandardOutpuStream
+    {
+        get => LoggerFile.EnableWriteToStandardOutpuStream;
+        set => LoggerFile.EnableWriteToStandardOutpuStream = value;
+    }
+
+    /// <summary>
     /// Write line
     /// </summary>
     /// <param name="message"></param>
@@ -217,4 +226,45 @@ public class Logger
     /// <param name="exception"></param>
     public static void DebugLinear(string message, Exception? exception = null)
         => LoggerFile.DebugLinear(message, exception);
+
+    /// <summary>
+    /// Develop
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="exception"></param>
+    public static void Develop(string message, Exception? exception = null)
+        => LoggerFile.Develop(message, exception);
+
+    /// <summary>
+    /// Develop linear
+    /// </summary>
+    public static void DevelopLinear()
+        => LoggerFile.DevelopLinear();
+
+    /// <summary>
+    /// Develop parameter
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    /// <param name="exception"></param>
+    public static void DevelopParameter(string key, string value, Exception? exception = null)
+        => LoggerFile.DevelopParameter(key, value, exception);
+
+    /// <summary>
+    /// Develop parameters
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="parameters"></param>
+    /// <param name="exception"></param>
+    public static void DevelopParameters(string message, Json parameters, Exception? exception = null)
+        => LoggerFile.DevelopParameters(message, parameters, exception);
+
+    /// <summary>
+    /// Develop parameters  
+    /// </summary>
+    /// <param name="parameters"></param>
+    /// <param name="exception"></param>
+    public static void DevelopParameters(Json parameters, Exception? exception = null)
+        => LoggerFile.DevelopParameters(parameters, exception);
+
 }

@@ -5,13 +5,17 @@ namespace TidyHPC.Loggers;
 /// <summary>
 /// 日志文件
 /// </summary>
-public class LoggerFile:IDisposable
+public class LoggerFile : IDisposable
 {
     /// <summary>
     /// Log level
     /// </summary>
     public enum Levels
     {
+        /// <summary>
+        /// Log all
+        /// </summary>
+        Develop,
         /// <summary>
         /// Log all
         /// </summary>
@@ -27,13 +31,14 @@ public class LoggerFile:IDisposable
         /// <summary>
         /// Log fatal only
         /// </summary>
-        None
+        None,
+
     }
 
     /// <summary>
     /// The log level
     /// </summary>
-    public Levels Level { get; set; } = Levels.Debug;
+    public Levels Level { get; set; } = Levels.Develop;
 
     /// <summary>
     /// The length of the parameter
@@ -44,6 +49,15 @@ public class LoggerFile:IDisposable
     /// The log queue
     /// </summary>
     public QueueLogger QueueLogger { get; } = new QueueLogger();
+
+    /// <summary>
+    /// 是否写入标准输出流
+    /// </summary>
+    public bool EnableWriteToStandardOutpuStream
+    {
+        get => QueueLogger.EnableWriteToStandardOutpuStream;
+        set => QueueLogger.EnableWriteToStandardOutpuStream = value;
+    }
 
     /// <summary>
     /// 释放资源
@@ -288,5 +302,57 @@ public class LoggerFile:IDisposable
     public void DebugLinear(string message, Exception? exception = null)
     {
         Debug(FormatLinear(message), exception);
+    }
+
+    /// <summary>
+    /// Develop
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="exception"></param>
+    public void Develop(string message, Exception? exception = null)
+    {
+        QueueLogger.WriteLine(Format(Levels.Develop, message, exception));
+    }
+
+    /// <summary>
+    /// Develop linear
+    /// </summary>
+    public void DevelopLinear()
+    {
+        Develop(FormatLinear(string.Empty), null);
+    }
+
+    /// <summary>
+    /// Develop parameter
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    /// <param name="exception"></param>
+    public void DevelopParameter(string key, string value, Exception? exception = null)
+    {
+        Develop(FormatParameter(key, value), exception);
+    }
+
+    /// <summary>
+    /// Develop parameters
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="parameters"></param>
+    /// <param name="exception"></param>
+    public void DevelopParameters(string message, Json parameters, Exception? exception = null)
+    {
+        Develop(message, exception);
+        QueueLogger.WriteLine(parameters.ToString(true));
+    }
+
+    /// <summary>
+    /// Develop parameters
+    /// </summary>
+    /// <param name="parameters"></param>
+    /// <param name="exception"></param>
+    public void DevelopParameters(Json parameters, Exception? exception = null)
+    {
+        Develop(string.Empty, exception);
+        QueueLogger.WriteLine(parameters.ToString(true));
     }
 }
