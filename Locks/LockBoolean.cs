@@ -28,32 +28,47 @@ public class LockBoolean : Lock<bool>
     /// <summary>
     /// 逻辑与
     /// </summary>
-    /// <param name="value"></param>
+    /// <param name="self"></param>
     /// <param name="and"></param>
     /// <returns></returns>
-    public static LockBoolean operator &(LockBoolean value, bool and) => new(value.Value & and);
+    public static LockBoolean operator &(LockBoolean self, bool and)
+    {
+        self.Process(value => value & and);
+        return self;
+    }
 
     /// <summary>
     /// 逻辑或
     /// </summary>
-    /// <param name="value"></param>
+    /// <param name="self"></param>
     /// <param name="or"></param>
     /// <returns></returns>
-    public static LockBoolean operator |(LockBoolean value, bool or) => new(value.Value | or);
+    public static LockBoolean operator |(LockBoolean self, bool or)
+    {
+        self.Process(value => value | or);
+        return self;
+    }
 
     /// <summary>
     /// 逻辑异或
     /// </summary>
-    /// <param name="value"></param>
+    /// <param name="self"></param>
     /// <param name="xor"></param>
     /// <returns></returns>
-    public static LockBoolean operator ^(LockBoolean value, bool xor) => new(value.Value ^ xor);
+    public static LockBoolean operator ^(LockBoolean self, bool xor)
+    {
+        self.Process(value => value ^ xor);
+        return self;
+    }
 
     /// <summary>
     /// 逻辑非
     /// </summary>
-    /// <param name="value"></param>
+    /// <param name="self"></param>
     /// <returns></returns>
-    public static LockBoolean operator !(LockBoolean value) => new(!value.Value);
+    public static LockBoolean operator !(LockBoolean self)
+    {
+        self.Process(value => !value);
+        return self;
+    }
 }
-
