@@ -390,7 +390,7 @@ public partial struct Json
     /// <param name="value"></param>
     /// <param name="startIndex"></param>
     /// <returns></returns>
-    public int IndexOf(Json value,int startIndex)
+    public int IndexOf(Json value, int startIndex)
     {
         if (IsArray)
         {
@@ -514,12 +514,38 @@ public partial struct Json
     /// <returns></returns>
     public Json Slice(int start, int end)
     {
-        List<object?>? result = null;
-        AssertArray(self =>
+        if (IsArray)
         {
+            List<object?>? result = null;
+            var self = AsArray;
+            if (end < 0)
+            {
+                end = self.Count + end;
+            }
+            if (start < 0)
+            {
+                start = self.Count + start;
+            }
             result = self.Slice(start, end);
-        });
-        return new(result);
+            return new(result);
+        }
+        else if (IsString)
+        {
+            var self = AsString;
+            if (end < 0)
+            {
+                end = self.Length + end;
+            }
+            if (start < 0)
+            {
+                start = self.Length + start;
+            }
+            return new(self[start..end]);
+        }
+        else
+        {
+            throw new Exception($"Unsupported type:{GetValueKind()}");
+        }
     }
 
     /// <summary>

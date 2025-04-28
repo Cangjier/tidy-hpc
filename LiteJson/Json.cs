@@ -149,21 +149,23 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// Undefined
     /// </summary>
     public static Json Undefined => "undefined-622102F6-FF98-4CB6-887B-175F4C1024B0";
-    
+
     /// <summary>
     /// <para>If self is Array, get the count of Array</para>
     /// <para>If self is Object,get the count of Object </para>
+    /// <para>If self is String, get the length of String</para>
     /// </summary>
     public readonly int Count
     {
         get
         {
             if (Node == null) return 0;
-            if(Node is JsonObject jsonObject) return jsonObject.Count;
-            else if(Node is JsonArray jsonArray) return jsonArray.Count;
-            else if(Node is IDictionary dictionary) return dictionary.Count;
-            else if(Node is IList list) return list.Count;
-            else if(Node is Array array) return array.Length;
+            if (Node is JsonObject jsonObject) return jsonObject.Count;
+            else if (Node is JsonArray jsonArray) return jsonArray.Count;
+            else if (Node is IDictionary dictionary) return dictionary.Count;
+            else if (Node is IList list) return list.Count;
+            else if (Node is Array array) return array.Length;
+            else if (Node is string stringValue) return stringValue.Length;
             else return 0;
         }
     }
