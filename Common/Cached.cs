@@ -33,15 +33,4 @@ public class Cached<T>
             return _value!;
         }
     }
-
-    /// <summary>
-    /// 隐式转换
-    /// </summary>
-    /// <param name="cached"></param>
-    public static implicit operator T(Cached<T> cached)
-    {
-        return cached.Value;
-    }
-
-
 }
