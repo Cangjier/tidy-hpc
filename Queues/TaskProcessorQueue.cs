@@ -1,4 +1,6 @@
-﻿namespace TidyHPC.Queues;
+﻿using TidyHPC.Semaphores;
+
+namespace TidyHPC.Queues;
 
 /// <summary>
 /// 处理者
@@ -59,6 +61,8 @@ public class TaskProcessorQueue<TValue>
 
     private WaitQueue<IProcessor<TValue>> ProcessorQueue { get; } = new();
 
+    private ReverseSemaphore TaskEmptySemaphore { get; } = new();
+
     /// <summary>
     /// 取消等待队列
     /// </summary>
@@ -72,6 +76,7 @@ public class TaskProcessorQueue<TValue>
     public TValue Enqueue(TValue value)
     {
         TaskQueue.Enqueue(value);
+        TaskEmptySemaphore.Increment();
         return value;
     }
 
@@ -161,6 +166,7 @@ public class TaskProcessorQueue<TValue>
             async Task func()
             {
                 await processor.Process(task);
+                TaskEmptySemaphore.Decrement();
                 ProcessorQueue.Enqueue(processor);
             }
             _ = func();
@@ -180,6 +186,15 @@ public class TaskProcessorQueue<TValue>
             AddProcessor(new SimpleProcessor<TValue>(onProcess));
         }
         await Start();
+    }
+
+    /// <summary>
+    /// 等待任务队列为空，并且所有处理者都完成
+    /// </summary>
+    /// <returns></returns>
+    public async Task WaitForTaskEmptyAsync()
+    {
+        await TaskEmptySemaphore.WaitUntilZeroAsync();
     }
 
     /// <summary>

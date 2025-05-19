@@ -74,9 +74,6 @@ public class QueueLogger:IDisposable
     /// <returns></returns>
     public async Task WaitForEmpty()
     {
-        while (LinesQueue.BlockingTaskCount > 0)
-        {
-            await Task.Delay(100);
-        }
+        await LinesQueue.WaitForTaskEmptyAsync();
     }
 }
