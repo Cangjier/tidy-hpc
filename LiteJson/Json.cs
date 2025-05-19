@@ -334,6 +334,40 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     }
 
     /// <summary>
+    /// Load Json from file until timeout
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    /// <exception cref="TimeoutException"></exception>
+    public static async Task<Json> LoadUntilTimeout(string path)
+    {
+        int timeout = 1000;
+        while (true)
+        {
+            if (timeout <= 0)
+            {
+                throw new TimeoutException($"Load {path} timeout");
+            }
+            if (File.Exists(path) == false)
+            {
+                await Task.Delay(10);
+                timeout -= 10;
+                continue;
+            }
+            try
+            {
+                return Load(path);
+            }
+            catch
+            {
+                await Task.Delay(10);
+                timeout -= 10;
+                continue;
+            }
+        }
+    }
+
+    /// <summary>
     /// Load Json from file async
     /// </summary>
     /// <param name="path"></param>
