@@ -7,7 +7,7 @@ public class ReverseSemaphore
 {
     private int _count = 0;
     private readonly object _lock = new object();
-    private TaskCompletionSource<bool> _tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+    private TaskCompletionSource<bool> _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>
     /// 增加信号量
@@ -51,6 +51,10 @@ public class ReverseSemaphore
     {
         lock (_lock)
         {
+            if (_count == 0)
+            {
+                return Task.CompletedTask; // 如果已经为0，直接返回完成的任务
+            }
             return _tcs.Task;
         }
     }

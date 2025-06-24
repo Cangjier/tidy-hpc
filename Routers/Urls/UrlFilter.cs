@@ -155,7 +155,7 @@ public class UrlFilter(UrlRouter urlRouter)
             {
                 throw new Exception($"参数{parameter.Name}未指定别名");
             }
-            parameterMetas[i] = new UrlParameterMetaRecord(parameter, aliases, isOptional);
+            parameterMetas[i] = new UrlParameterMetaRecord(parameter, aliases, isOptional, null);
         }
 
         Type? taskResultType = null;

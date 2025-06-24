@@ -27,7 +27,56 @@ public record UrlRouterRecord(string Pattern, Regex Regex, Func<Session, Task> H
 /// <param name="Parameter"></param>
 /// <param name="Aliases"></param>
 /// <param name="IsOptional"></param>
-public record UrlParameterMetaRecord(ParameterInfo Parameter, string[] Aliases,bool IsOptional);
+/// <param name="TypeScriptInterface"></param>
+public record UrlParameterMetaRecord(
+    ParameterInfo Parameter, 
+    string[] Aliases,
+    bool IsOptional,
+    string? TypeScriptInterface);
+
+/// <summary>
+/// Url 返回类型元数据记录
+/// </summary>
+/// <param name="Type"></param>
+/// <param name="TypeScriptInterface"></param>
+public record UrlReturnMetaRecord(
+    Type Type,
+    string? TypeScriptInterface
+    );
+
+/// <summary>
+/// Url 文档记录，可以提供给文档生成器使用
+/// </summary>
+/// <param name="Pattern"></param>
+/// <param name="Parameters"></param>
+/// <param name="RetunrType"></param>
+/// <param name="Target"></param>
+public record UrlDocumentRecord(string Pattern, UrlParameterMetaRecord[] Parameters, UrlReturnMetaRecord RetunrType,Delegate Target)
+{
+    /// <summary>
+    /// 将 UrlDocumentRecord 转换为 Json 记录
+    /// </summary>
+    /// <returns></returns>
+    public Json ToRecord()
+    {
+        var result = Json.NewObject();
+        result["pattern"] = Pattern;
+        var parametersArray = result.GetOrCreateArray("parameters");
+        foreach (var parameter in Parameters)
+        {
+            var parameterRecord = parametersArray.AddObject();
+            parameterRecord["name"] = parameter.Parameter.Name;
+            parameterRecord["aliases"] = parameter.Aliases;
+            parameterRecord["type"] = parameter.Parameter.ParameterType.FullName;
+            parameterRecord["isOptional"] = parameter.IsOptional;
+            parameterRecord["typeScriptInterface"] = parameter.TypeScriptInterface;
+        }
+        var returnRecord = result.GetOrCreateObject("return");
+        returnRecord["type"] = RetunrType.Type.FullName;
+        returnRecord["typeScriptInterface"] = RetunrType.TypeScriptInterface;
+        return result;
+    }
+}
 
 /// <summary>
 /// Url 路由事件
@@ -147,6 +196,11 @@ public class UrlRouter
     internal ConcurrentDictionary<string, ImmutableDictionary<string,string>> HotUrlRegexMatchGroups { get; } = new();
 
     /// <summary>
+    /// 文档记录，提供给文档生成器使用
+    /// </summary>
+    private ConcurrentDictionary<string, UrlDocumentRecord> Document { get; } = [];
+
+    /// <summary>
     /// 过滤器
     /// </summary>
     public UrlFilter Filter { get; }
@@ -259,6 +313,12 @@ public class UrlRouter
     }
 
     /// <summary>
+    /// 获取所有文档记录
+    /// </summary>
+    /// <returns></returns>
+    public UrlDocumentRecord[] GetDocument() => Document.Values.ToArray();
+
+    /// <summary>
     /// 通过方法反射注册路由
     /// </summary>
     /// <param name="method"></param>
@@ -269,6 +329,7 @@ public class UrlRouter
         var urlPattern = onPattern();
         var urlRegex = new Regex(urlPattern, RegexOptions.IgnoreCase);
         var urlMethod = method.GetCustomAttribute<UrlMethodAttribute>();
+        var methodTypeScriptInterface = method.GetCustomAttribute<TypeScriptInterfaceAttribute>()?.TypeScriptInterface;
 
         var parameters = method.GetParameters();
         var parameterMetas = new UrlParameterMetaRecord[parameters.Length];
@@ -277,6 +338,7 @@ public class UrlRouter
             var parameter = parameters[i];
             var aliases = parameter.GetCustomAttribute<ArgsAliasesAttribute>()?.Aliases;
             var isOptional = parameter.GetCustomAttribute<OptionalAttribute>() != null;
+            var typeScriptInterface = parameter.GetCustomAttribute<TypeScriptInterfaceAttribute>()?.TypeScriptInterface;
             if (aliases == null && parameter.Name != null)
             {
                 aliases = [parameter.Name];
@@ -285,7 +347,7 @@ public class UrlRouter
             {
                 throw new Exception($"参数{parameter.Name}未指定别名");
             }
-            parameterMetas[i] = new UrlParameterMetaRecord(parameter, aliases, isOptional);
+            parameterMetas[i] = new UrlParameterMetaRecord(parameter, aliases, isOptional, typeScriptInterface);
         }
 
         Type? taskResultType = null;
@@ -302,6 +364,12 @@ public class UrlRouter
             taskResultType = genericTypeArguments[0];
             taskResultProperty = method.ReturnType.GetProperty("Result");
         }
+        Document.TryAdd(urlPattern, new UrlDocumentRecord(
+            urlPattern,
+            parameterMetas,
+            new UrlReturnMetaRecord (taskResultType ?? method.ReturnType, methodTypeScriptInterface),
+            onInstance
+        ));
         var sendError =async (Session session,Action<NetMessageInterface> onMessage) =>
         {
             await session.Complete(async () =>
