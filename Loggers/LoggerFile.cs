@@ -25,6 +25,10 @@ public class LoggerFile : IDisposable
         /// </summary>
         Info,
         /// <summary>
+        /// Log warn and above
+        /// </summary>
+        Warn,
+        /// <summary>
         /// Log error and above
         /// </summary>
         Error,
@@ -71,6 +75,14 @@ public class LoggerFile : IDisposable
     /// Machine name
     /// </summary>
     public string MachineName { get; set; } = Environment.MachineName;
+
+    private void TryProcess(Levels level,Action action)
+    {
+        if (level >= Level)
+        {
+            action();
+        }
+    }
 
     /// <summary>
     /// Format the log message
@@ -143,7 +155,7 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void Error(string message, Exception? exception = null)
     {
-        QueueLogger.WriteLine(Format(Levels.Error, message, exception));
+        TryProcess(Levels.Error, () => QueueLogger.WriteLine(Format(Levels.Error, message, exception)));
     }
 
     /// <summary>
@@ -152,7 +164,7 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void Error(Exception? exception)
     {
-        QueueLogger.WriteLine(Format(Levels.Error, exception));
+        TryProcess(Levels.Error, () => QueueLogger.WriteLine(Format(Levels.Error, exception)));
     }
 
     /// <summary>
@@ -163,7 +175,7 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void ErrorParameter(string key, string value, Exception? exception = null)
     {
-        Error(FormatParameter(key, value), exception);
+        TryProcess(Levels.Error, () => Error(FormatParameter(key, value), exception));
     }
 
     /// <summary>
@@ -174,8 +186,11 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void ErrorParameters(string message, Json parameters, Exception? exception = null)
     {
-        Error(message, exception);
-        QueueLogger.WriteLine(parameters.ToString(true));
+        TryProcess(Levels.Error, () =>
+        {
+            Error(message, exception);
+            QueueLogger.WriteLine(parameters.ToString(true));
+        });
     }
 
     /// <summary>
@@ -185,7 +200,10 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void ErrorLinear(string message, Exception? exception = null)
     {
-        Error(FormatLinear(message), exception);
+        TryProcess(Levels.Error, () =>
+        {
+            Error(FormatLinear(message), exception);
+        });
     }
 
     /// <summary>
@@ -195,7 +213,7 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void Info(string message, Exception? exception = null)
     {
-        QueueLogger.WriteLine(Format(Levels.Info, message, exception));
+        TryProcess(Levels.Info, () => QueueLogger.WriteLine(Format(Levels.Info, message, exception)));
     }
 
     /// <summary>
@@ -203,7 +221,7 @@ public class LoggerFile : IDisposable
     /// </summary>
     public void InfoLinear()
     {
-        Info(FormatLinear(string.Empty), null);
+        TryProcess(Levels.Info, () => Info(FormatLinear(string.Empty), null));
     }
 
     /// <summary>
@@ -213,7 +231,7 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void InfoLinear(string message, Exception? exception = null)
     {
-        Info(FormatLinear(message), exception);
+        TryProcess(Levels.Info, () => Info(FormatLinear(message), exception));
     }
 
     /// <summary>
@@ -224,7 +242,7 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void InfoParameter(string key, string value, Exception? exception = null)
     {
-        Info(FormatParameter(key, value), exception);
+        TryProcess(Levels.Info, () => Info(FormatParameter(key, value), exception));
     }
 
     /// <summary>
@@ -235,8 +253,11 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void InfoParameters(string message, Json parameters, Exception? exception = null)
     {
-        Info(message, exception);
-        QueueLogger.WriteLine(parameters.ToString(true));
+        TryProcess(Levels.Info, () =>
+        {
+            Info(message, exception);
+            QueueLogger.WriteLine(parameters.ToString(true));
+        });
     }
 
     /// <summary>
@@ -246,8 +267,11 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void InfoParameters(Json parameters, Exception? exception = null)
     {
-        Info(string.Empty, exception);
-        QueueLogger.WriteLine(parameters.ToString(true));
+        TryProcess(Levels.Info, () =>
+        {
+            Info(string.Empty, exception);
+            QueueLogger.WriteLine(parameters.ToString(true));
+        });
     }
 
     /// <summary>
@@ -257,7 +281,7 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void Debug(string message, Exception? exception = null)
     {
-        QueueLogger.WriteLine(Format(Levels.Debug, message, exception));
+        TryProcess(Levels.Debug, () => QueueLogger.WriteLine(Format(Levels.Debug, message, exception)));
     }
 
     /// <summary>
@@ -268,7 +292,7 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void DebugParameter(string key, string value, Exception? exception = null)
     {
-        Debug(FormatParameter(key, value), exception);
+        TryProcess(Levels.Debug, () => Debug(FormatParameter(key, value), exception));
     }
 
     /// <summary>
@@ -279,8 +303,11 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void DebugParameters(string message, Json parameters, Exception? exception = null)
     {
-        Debug(message, exception);
-        QueueLogger.WriteLine(parameters.ToString(true));
+        TryProcess(Levels.Debug, () =>
+        {
+            Debug(message, exception);
+            QueueLogger.WriteLine(parameters.ToString(true));
+        });
     }
 
     /// <summary>
@@ -290,8 +317,11 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void DebugParameters(Json parameters, Exception? exception = null)
     {
-        Debug(string.Empty, exception);
-        QueueLogger.WriteLine(parameters.ToString(true));
+        TryProcess(Levels.Debug, () =>
+        {
+            Debug(string.Empty, exception);
+            QueueLogger.WriteLine(parameters.ToString(true));
+        });
     }
 
     /// <summary>
@@ -301,7 +331,75 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void DebugLinear(string message, Exception? exception = null)
     {
-        Debug(FormatLinear(message), exception);
+        TryProcess(Levels.Debug, () => Debug(FormatLinear(message), exception));
+    }
+
+    /// <summary>
+    /// Warn
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="exception"></param>
+    public void Warn(string message, Exception? exception = null)
+    {
+        TryProcess(Levels.Warn, () => QueueLogger.WriteLine(Format(Levels.Warn, message, exception)));
+    }
+
+    /// <summary>
+    /// Warn linear
+    /// </summary>
+    public void WarnLinear()
+    {
+        TryProcess(Levels.Warn, () => Warn(FormatLinear(string.Empty), null));
+    }
+
+    /// <summary>
+    /// Warn linear
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="exception"></param>
+    public void WarnLinear(string message, Exception? exception = null)
+    {
+        TryProcess(Levels.Warn, () => Warn(FormatLinear(message), exception));
+    }
+
+    /// <summary>
+    /// Warn parameter
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    /// <param name="exception"></param>
+    public void WarnParameter(string key, string value, Exception? exception = null)
+    {
+        TryProcess(Levels.Warn, () => Warn(FormatParameter(key, value), exception));
+    }
+
+    /// <summary>
+    /// Warn parameters
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="parameters"></param>
+    /// <param name="exception"></param>
+    public void WarnParameters(string message, Json parameters, Exception? exception = null)
+    {
+        TryProcess(Levels.Warn, () =>
+        {
+            Warn(message, exception);
+            QueueLogger.WriteLine(parameters.ToString(true));
+        });
+    }
+
+    /// <summary>
+    /// Warn parameters
+    /// </summary>
+    /// <param name="parameters"></param>
+    /// <param name="exception"></param>
+    public void WarnParameters(Json parameters, Exception? exception = null)
+    {
+        TryProcess(Levels.Warn, () =>
+        {
+            Warn(string.Empty, exception);
+            QueueLogger.WriteLine(parameters.ToString(true));
+        });
     }
 
     /// <summary>
@@ -311,7 +409,7 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void Develop(string message, Exception? exception = null)
     {
-        QueueLogger.WriteLine(Format(Levels.Develop, message, exception));
+        TryProcess(Levels.Develop, () => QueueLogger.WriteLine(Format(Levels.Develop, message, exception)));
     }
 
     /// <summary>
@@ -319,7 +417,7 @@ public class LoggerFile : IDisposable
     /// </summary>
     public void DevelopLinear()
     {
-        Develop(FormatLinear(string.Empty), null);
+        TryProcess(Levels.Develop, () => Develop(FormatLinear(string.Empty), null));
     }
 
     /// <summary>
@@ -330,7 +428,7 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void DevelopParameter(string key, string value, Exception? exception = null)
     {
-        Develop(FormatParameter(key, value), exception);
+        TryProcess(Levels.Develop, () => Develop(FormatParameter(key, value), exception));
     }
 
     /// <summary>
@@ -341,8 +439,11 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void DevelopParameters(string message, Json parameters, Exception? exception = null)
     {
-        Develop(message, exception);
-        QueueLogger.WriteLine(parameters.ToString(true));
+        TryProcess(Levels.Develop, () =>
+        {
+            Develop(message, exception);
+            QueueLogger.WriteLine(parameters.ToString(true));
+        });
     }
 
     /// <summary>
@@ -352,7 +453,10 @@ public class LoggerFile : IDisposable
     /// <param name="exception"></param>
     public void DevelopParameters(Json parameters, Exception? exception = null)
     {
-        Develop(string.Empty, exception);
-        QueueLogger.WriteLine(parameters.ToString(true));
+        TryProcess(Levels.Develop, () =>
+        {
+            Develop(string.Empty, exception);
+            QueueLogger.WriteLine(parameters.ToString(true));
+        });
     }
 }
