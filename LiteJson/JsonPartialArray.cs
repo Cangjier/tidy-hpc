@@ -30,13 +30,28 @@ public partial struct Json
     /// <returns></returns>
     public readonly Json Get(int index, Json defaultValue)
     {
-        AssertArray();
-        var array = AsArray;
-        if (index < 0 || index >= array.Count)
+        if (IsArray)
         {
-            return defaultValue;
+            var array = AsArray;
+            if (index < 0 || index >= array.Count)
+            {
+                return defaultValue;
+            }
+            return new(array[index]);
         }
-        return new(array[index]);
+        else if (IsString)
+        {
+            var stringValue = AsString;
+            if (index < 0 || index >= stringValue.Length)
+            {
+                return defaultValue;
+            }
+            return new(stringValue[index]);
+        }
+        else
+        {
+            throw new Exception($"Unsupported type:{GetValueKind()}");
+        }
     }
 
     /// <summary>
