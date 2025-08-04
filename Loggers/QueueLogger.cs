@@ -10,9 +10,9 @@ public class QueueLogger:IDisposable
     /// <summary>
     /// Constructor
     /// </summary>
-    public QueueLogger() : this(Path.Combine(Path.GetTempPath(),$"{Path.GetFileNameWithoutExtension(Environment.ProcessPath)}-{Guid.NewGuid()}.log"))
+    public QueueLogger() : this(Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Environment.ProcessPath)??"", $"{Guid.NewGuid()}.log"))
     {
-
+        
     }
 
     /// <summary>
@@ -21,6 +21,11 @@ public class QueueLogger:IDisposable
     /// <param name="filePath"></param>
     public QueueLogger(string filePath)
     {
+        var directory = Path.GetDirectoryName(filePath);
+        if (Directory.Exists(directory) == false)
+        {
+            Directory.CreateDirectory(directory!);
+        }
         FilePath = filePath;
         LinesQueue.AddProcessor(async line =>
         {

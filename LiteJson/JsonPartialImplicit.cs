@@ -67,6 +67,28 @@ public partial struct Json
     public static implicit operator Json(JsonElement value) => new(value);
 
     /// <summary>
+    /// Convert char to JsonNode
+    /// </summary>
+    /// <param name="value"></param>
+    public static implicit operator Json(char value) => new(value);
+
+    /// <summary>
+    /// Convert char to JsonNode
+    /// </summary>
+    /// <param name="value"></param>
+    public static implicit operator Json(char? value)
+    {
+        if (value == null)
+        {
+            return Null;
+        }
+        else
+        {
+            return new(value.Value);
+        }
+    }
+
+    /// <summary>
     /// Convert Json to JsonNode
     /// </summary>
     /// <param name="value"></param>
@@ -389,6 +411,11 @@ public partial struct Json
     /// </summary>
     public static Func<Json, Type, object?>? ImplicitTo { get; set; }
 
+    private static TypeExtensions.TryGetImplicitMethodSettings Disable_op_ImplicitTo_value_toType = new()
+    {
+        Enable_op_ImplicitTo_value_toType = false,
+    };
+
     /// <summary>
     /// 隐式转换代理，用于Script
     /// </summary>
@@ -399,6 +426,7 @@ public partial struct Json
     public static object? op_ImplicitTo(Json value, Type toType)
     {
         if (toType == typeof(string) && value.IsString == false) return value.ToString();
+        else if (toType == typeof(string) && value.Node is char) return value.Node.ToString();
         else if (toType == typeof(bool) && value.IsString) return value.AsString == "true" ? true : false;
         else if (toType == typeof(int)) return value.ToInt32;
         else if (toType == typeof(float)) return value.ToFloat;
@@ -478,11 +506,11 @@ public partial struct Json
             }
             return result;
         }
-        else if (value.Node != null && value.Node.GetType().TryAssignTo(value.Node, toType, out var tryAssignResult))
+        else if (value.Node != null && value.Node.GetType().TryAssignTo(value.Node, toType, TypeExtensions.TryGetImplicitMethodSettings.Default, out var tryAssignResult))
         {
             return tryAssignResult;
         }
-        else if (typeof(Json).TryAssignTo(value, toType, out var tryAssignResult2))
+        else if (typeof(Json).TryAssignTo(value, toType, Disable_op_ImplicitTo_value_toType, out var tryAssignResult2))
         {
             return tryAssignResult2;
         }

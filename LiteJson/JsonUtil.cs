@@ -8,15 +8,23 @@ internal static class JsonUtil
         return value is byte || value is short || value is int || value is long || value is float || value is double || value is decimal;
     }
 
-    public static bool DeepEquals(object? a,object? b)
+    public static bool DeepEquals(object? a, object? b)
     {
-        if(a== null && b == null)
+        if (a == null && b == null)
         {
             return true;
         }
-        if(a == null || b == null)
+        if (a == null || b == null)
         {
             return false;
+        }
+        if (a is string && b is char)
+        {
+            return (string)a == ((char)b).ToString();
+        }
+        else if(a is char && b is string)
+        {
+            return ((char)a).ToString() == (string)b;
         }
         // 如果a和b都是number类型
         if (IsNumber(a))
@@ -27,6 +35,7 @@ internal static class JsonUtil
             }
             return false;
         }
+
         return a.Equals(b) || b.Equals(a);
     }
 

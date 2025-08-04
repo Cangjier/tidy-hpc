@@ -1432,7 +1432,7 @@ public static class TypeExtensions
                     parameterArguments[i] = arguments[i];
                     continue;
                 }
-                if (argumentType.TryAssignTo(arguments[i], parameterType, out var parameterValue))
+                if (argumentType.TryAssignTo(arguments[i], parameterType, TryGetImplicitMethodSettings.Default, out var parameterValue))
                 {
                     parameterArguments[i] = parameterValue;
                     continue;
@@ -1457,7 +1457,7 @@ public static class TypeExtensions
                             paramsValue.SetValue(arguments[i], i - frontParameterTypes.Length);
                             continue;
                         }
-                        if (argumentType.TryAssignTo(arguments[i], elementType, out var parameterValue))
+                        if (argumentType.TryAssignTo(arguments[i], elementType, TryGetImplicitMethodSettings.Default, out var parameterValue))
                         {
                             paramsValue.SetValue(parameterValue, i - frontParameterTypes.Length);
                             continue;
@@ -1474,7 +1474,7 @@ public static class TypeExtensions
                         parameterArguments[arguments.Length - 1] = arguments[arguments.Length - 1];
                         return true;
                     }
-                    if (argumentType.TryAssignTo(arguments[arguments.Length - 1], lastParameterType, out var parameterValue))
+                    if (argumentType.TryAssignTo(arguments[arguments.Length - 1], lastParameterType, TryGetImplicitMethodSettings.Default, out var parameterValue))
                     {
                         parameterArguments[arguments.Length - 1] = parameterValue;
                         return true;
@@ -1776,7 +1776,7 @@ public static class TypeExtensions
         {
             return true;
         }
-        else if (TryGetImplicitMethod(fromType, toType, out _))
+        else if (TryGetImplicitMethod(fromType, toType, TryGetImplicitMethodSettings.Default, out _))
         {
             return true;
         }
@@ -1810,7 +1810,7 @@ public static class TypeExtensions
         {
             return 4;
         }
-        else if (TryGetImplicitMethod(fromType, toType, out _))
+        else if (TryGetImplicitMethod(fromType, toType, TryGetImplicitMethodSettings.Default, out _))
         {
             return 2;
         }
@@ -1841,9 +1841,10 @@ public static class TypeExtensions
     /// <param name="fromType"></param>
     /// <param name="fromValue"></param>
     /// <param name="toType"></param>
+    /// <param name="settings"></param>
     /// <param name="toValue"></param>
     /// <returns></returns>
-    public static bool TryAssignTo(this Type fromType, object? fromValue, Type toType, out object? toValue)
+    public static bool TryAssignTo(this Type fromType, object? fromValue, Type toType, TryGetImplicitMethodSettings settings, out object? toValue)
     {
         if (fromType.IsPrimitive && toType.IsPrimitive)
         {
@@ -2053,7 +2054,7 @@ public static class TypeExtensions
             toValue = fromValue;
             return true;
         }
-        else if (fromType.TryGetImplicitMethod(toType, out var implicitMethod))
+        else if (fromType.TryGetImplicitMethod(toType, settings, out var implicitMethod))
         {
             if (implicitMethod.GetParameters().Length == 1)
             {
@@ -2083,7 +2084,7 @@ public static class TypeExtensions
         {
             return true;
         }
-        else if (fromType.TryGetImplicitMethod(toType, out implicitMethod))
+        else if (fromType.TryGetImplicitMethod(toType, TryGetImplicitMethodSettings.Default, out implicitMethod))
         {
             return true;
         }
@@ -2097,13 +2098,33 @@ public static class TypeExtensions
     private static Regex op_ImplicitTo_Regex = new("op_ImplicitTo_(.*)");
 
     /// <summary>
+    /// 尝试获取隐式转换方法的设置
+    /// </summary>
+    public struct TryGetImplicitMethodSettings
+    {
+        /// <summary>
+        /// 是否启用 op_ImplicitTo_value_toType
+        /// </summary>
+        public bool Enable_op_ImplicitTo_value_toType;
+
+        /// <summary>
+        /// 默认设置
+        /// </summary>
+        public static TryGetImplicitMethodSettings Default { get; } = new()
+        {
+            Enable_op_ImplicitTo_value_toType = true,
+        };
+    }
+
+    /// <summary>
     /// 获取隐式转换方法
     /// </summary>
     /// <param name="fromType"></param>
     /// <param name="toType"></param>
     /// <param name="implicitMethod"></param>
+    /// <param name="settings"></param>
     /// <returns></returns>
-    public static bool TryGetImplicitMethod(this Type fromType, Type toType, [NotNullWhen(true)] out MethodInfo? implicitMethod)
+    public static bool TryGetImplicitMethod(this Type fromType, Type toType, TryGetImplicitMethodSettings settings, [NotNullWhen(true)] out MethodInfo? implicitMethod)
     {
         if (fromType.BaseType == typeof(MulticastDelegate) && toType.BaseType == typeof(MulticastDelegate))
         {
@@ -2125,7 +2146,7 @@ public static class TypeExtensions
             implicitMethod = method3;
             return true;
         }
-        else if (fromType.GetMethod("op_ImplicitTo", BindingFlags.Static | BindingFlags.Public, null, [fromType, typeof(Type)], null) is MethodInfo method5)
+        else if (settings.Enable_op_ImplicitTo_value_toType && fromType.GetMethod("op_ImplicitTo", BindingFlags.Static | BindingFlags.Public, null, [fromType, typeof(Type)], null) is MethodInfo method5)
         {
             implicitMethod = method5;
             return true;
@@ -2140,7 +2161,7 @@ public static class TypeExtensions
             implicitMethod = method6;
             return true;
         }
-        else if (fromType.TryFindStaticMethod("op_ImplicitTo", typeof(object), [fromType, typeof(Type)], out var method7))
+        else if (settings.Enable_op_ImplicitTo_value_toType && fromType.TryFindStaticMethod("op_ImplicitTo", typeof(object), [fromType, typeof(Type)], out var method7))
         {
             implicitMethod = method7;
             return true;
