@@ -98,6 +98,22 @@ public class SessionCache(Session session) : IDisposable
         }
     }
 
+    private string? CachedRequestBodyString { get; set; } = null;
+
+    /// <summary>
+    /// 获取请求体字符串
+    /// </summary>
+    /// <returns></returns>
+    public async Task<string> GetRequestBodyString()
+    {
+        if (CachedRequestBodyString == null)
+        {
+            using var reader = new StreamReader(Session.Request.Body, Util.UTF8);
+            CachedRequestBodyString = await reader.ReadToEndAsync();
+        }
+        return CachedRequestBodyString;
+    }
+
     /// <summary>
     /// 当前会话是否已经完成
     /// </summary>
