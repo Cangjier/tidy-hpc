@@ -159,6 +159,11 @@ public class UrlRouterEvents(UrlRouter urlRouter)
             await OnResponseJsonGenerated(session, responseJson);
         }
     }
+
+    /// <summary>
+    /// 当处理过程中发生异常时触发
+    /// </summary>
+    public Func<Session,string,Exception?,Task>? OnException { get; set; }
 }
 
 /// <summary>
@@ -404,6 +409,17 @@ public class UrlRouter
                 }
             });
         };
+        var sendErrorWrapper = async (Session session,int? code, string message,Exception? e) =>
+        {
+            if (Events.OnException != null)
+            {
+                await Events.OnException(session, message, e);
+            }
+            else
+            {
+                await sendError(session, msg => msg.Error(code, message, e));
+            }
+        };
 
         RealMap.TryAdd(urlPattern, new UrlRouterRecord(urlPattern, urlRegex, async session =>
         {
@@ -418,12 +434,12 @@ public class UrlRouter
             catch(Exception e)
             {
                 Logger.Error(e);
-                await sendError(session, msg => msg.Error(null, "解析请求体时发生异常", e));
+                await sendErrorWrapper(session,null, "解析请求体时发生异常", e);
                 return;
             }
             if (urlMethod != null && urlMethod.Method != session.Request.Method)
             {
-                await sendError(session, msg => msg.Error(null, $"请求方法不匹配,预期方法为{urlMethod.Method},实际方法为{session.Request.Method}"));
+                await sendErrorWrapper(session,null, $"请求方法不匹配,预期方法为{urlMethod.Method},实际方法为{session.Request.Method}",null);
                 return;
             }
             var instance = onInstance();
@@ -484,7 +500,7 @@ public class UrlRouter
             catch(Exception e)
             {
                 Logger.Error(e);
-                await sendError(session, msg => msg.Error(-1, e.Message, e));
+                await sendErrorWrapper(session, -1, e.Message, e); 
                 return;
             }
 
@@ -496,7 +512,7 @@ public class UrlRouter
             }
             catch(Exception e)
             {
-                await sendError(session, msg => msg.Error(-1, e.Message, e));
+                await sendErrorWrapper(session, -1, e.Message, e);
                 return;
             }
             await session.Complete(async () =>
