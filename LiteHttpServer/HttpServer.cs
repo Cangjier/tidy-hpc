@@ -42,9 +42,11 @@ public class HttpServer : IServer
         StartSemaphore.Release();
     }
 
+    private bool EnableLoop = true;
+
     private async Task Loop()
     {
-        while (true)
+        while (EnableLoop)
         {
             try
             {
@@ -117,6 +119,15 @@ public class HttpServer : IServer
                 break;
             }
         }
+    }
+
+    /// <summary>
+    /// 停止监听
+    /// </summary>
+    public void Stop()
+    {
+        Listener.Stop();
+        EnableLoop = false;
     }
 
     private WaitQueue<Session> SessionQueue { get; } = new();
