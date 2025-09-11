@@ -8,6 +8,13 @@ public interface IServer
     /// <summary>
     /// 获取下一个会话
     /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<Session> GetNextSession(CancellationToken cancellationToken);
+
+    // <summary>
+    /// 获取下一个会话
+    /// </summary>
     /// <returns></returns>
     Task<Session> GetNextSession();
 }

@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.WebSockets;
+using System.Threading;
 using TidyHPC.LiteHttpServer.Sessions;
 using TidyHPC.LiteHttpServer.WebsocketServerSessions;
 using TidyHPC.LiteJson;
@@ -30,7 +31,14 @@ public class HttpServer : IServer
     /// </summary>
     public HttpListenerPrefixCollection Prefixes=> Listener.Prefixes;
 
-    private SemaphoreSlim StartSemaphore { get; } = new(0);
+    /// <summary>
+    /// 启动监听
+    /// </summary>
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        Listener.Start();
+        await Loop(cancellationToken);
+    }
 
     /// <summary>
     /// 启动监听
@@ -38,13 +46,12 @@ public class HttpServer : IServer
     public void Start()
     {
         Listener.Start();
-        _ = Task.Run(Loop);
-        StartSemaphore.Release();
+        _ = Loop(CancellationToken.None);
     }
 
     private bool EnableLoop = true;
 
-    private async Task Loop()
+    private async Task Loop(CancellationToken cancellationToken)
     {
         while (EnableLoop)
         {
@@ -72,7 +79,7 @@ public class HttpServer : IServer
                         {
                             try
                             {
-                                var message = await webSocket.ReceiveMessage();
+                                var message = await webSocket.ReceiveMessage(cancellationToken);
                                 if(message.CloseStatus == WebSocketCloseStatus.NormalClosure)
                                 {
                                     break;
@@ -139,5 +146,14 @@ public class HttpServer : IServer
     public async Task<Session> GetNextSession()
     {
         return await SessionQueue.Dequeue();
+    }
+
+    /// <summary>
+    /// Get next session
+    /// </summary>
+    /// <returns></returns>
+    public async Task<Session> GetNextSession(CancellationToken cancellationToken)
+    {
+        return await SessionQueue.Dequeue(cancellationToken);
     }
 }

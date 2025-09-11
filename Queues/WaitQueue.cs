@@ -120,6 +120,25 @@ public class WaitQueue<TValue>: IWaitQueue
         return result;
     }
 
+    /// <summary>
+    /// 从队列中取出值，如果队列为空，则等待
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public async Task<TValue> Dequeue(CancellationToken cancellationToken)
+    {
+        OnDequeueStart?.Invoke();
+        await WaitQueueSemaphore.WaitAsync(cancellationToken);
+        Target.TryDequeue(out var result);
+        OnDequeue?.Invoke(result);
+        if (result == null)
+        {
+            throw new Exception("Dequeue result is null");
+        }
+        return result;
+    }
+
     async Task<object> IWaitQueue.Dequeue()
     {
         return await Dequeue() ?? throw new NullReferenceException();

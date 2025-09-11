@@ -36,9 +36,10 @@ public static class WebsocketExtensions
     /// 接受数据，如果是字节则默认为brotli压缩
     /// </summary>
     /// <param name="webSocket"></param>
+    /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public static async Task<WebsocketMessage> ReceiveMessage(this WebSocket webSocket)
+    public static async Task<WebsocketMessage> ReceiveMessage(this WebSocket webSocket,CancellationToken cancellationToken)
     {
         bool isBinary = false;
         using var memoryStream = new MemoryStream();
@@ -46,7 +47,7 @@ public static class WebsocketExtensions
         byte[] buffer = new byte[1024]; // 可以根据需要调整缓冲区大小  
         do
         {
-            result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);
             if (result.CloseStatus != null)
             {
                 if(result.CloseStatus == WebSocketCloseStatus.NormalClosure)
@@ -63,7 +64,7 @@ public static class WebsocketExtensions
             }
             if (result.MessageType == WebSocketMessageType.Close)
             {
-                await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, cancellationToken);
             }
             else if (result.MessageType == WebSocketMessageType.Text)
             {

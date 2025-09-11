@@ -28,13 +28,23 @@ public class WebsocketClient : IServer,IDisposable
     /// <returns></returns>
     public async Task<Session> GetNextSession()
     {
+        return await GetNextSession(CancellationToken.None);
+    }
+
+    /// <summary>
+    /// 获取下一个会话
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<Session> GetNextSession(CancellationToken cancellationToken)
+    {
         while (true)
         {
             WebsocketExtensions.WebsocketMessage message = new();
             try
             {
-                message = await Client.ReceiveMessage();
-                if(message.CloseStatus == WebSocketCloseStatus.NormalClosure)
+                message = await Client.ReceiveMessage(cancellationToken);
+                if (message.CloseStatus == WebSocketCloseStatus.NormalClosure)
                 {
                     throw new Exception("Websocket NormalClosure");
                 }

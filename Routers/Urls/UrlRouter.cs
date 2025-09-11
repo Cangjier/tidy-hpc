@@ -272,12 +272,17 @@ public class UrlRouter
     /// 监听服务
     /// </summary>
     /// <param name="server"></param>
+    /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task Listen(IServer server)
+    public async Task Listen(IServer server, CancellationToken cancellationToken)
     {
         while (true)
         {
-            var session = await server.GetNextSession();
+            if(cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            var session = await server.GetNextSession(cancellationToken);
             string? url = null;
             try
             {
