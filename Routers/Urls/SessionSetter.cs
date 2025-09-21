@@ -168,7 +168,8 @@ public class SessionSetter(Session session)
             if (Session.IsWebSocket)
             {
                 await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
-                urlResponseJson.Content.WriteTo(Session.Response.Body);
+                //urlResponseJson.Content.WriteTo(Session.Response.Body);
+                Session.WebSocketResponse?.SendMessage(urlResponseJson.Content.ToString());
                 urlResponseJson.Content.Dispose();
             }
             else
@@ -311,24 +312,31 @@ public class SessionSetter(Session session)
             using NetMessageInterface resultJson = NetMessageInterface.New();
             resultJson.data = new(resultValue);
             await urlRouter.Events.ResponseJsonGenerated(Session, resultJson.Target);
-            if (UrlResponse.DefaultContentEncoding == "br")
+            if (Session.IsWebSocket)
             {
-                using BrotliStream brotliStream = new(Session.Response.Body, CompressionMode.Compress);
-                resultJson.Target.WriteTo(brotliStream);
-            }
-            else if (UrlResponse.DefaultContentEncoding == "gzip")
-            {
-                using GZipStream gzipStream = new(Session.Response.Body, CompressionMode.Compress);
-                resultJson.Target.WriteTo(gzipStream);
-            }
-            else if (UrlResponse.DefaultContentEncoding == "deflate")
-            {
-                using DeflateStream deflateStream = new(Session.Response.Body, CompressionMode.Compress);
-                resultJson.Target.WriteTo(deflateStream);
+                Session.WebSocketResponse?.SendMessage(resultJson.ToString());
             }
             else
             {
-                resultJson.Target.WriteTo(Session.Response.Body);
+                if (UrlResponse.DefaultContentEncoding == "br")
+                {
+                    using BrotliStream brotliStream = new(Session.Response.Body, CompressionMode.Compress);
+                    resultJson.Target.WriteTo(brotliStream);
+                }
+                else if (UrlResponse.DefaultContentEncoding == "gzip")
+                {
+                    using GZipStream gzipStream = new(Session.Response.Body, CompressionMode.Compress);
+                    resultJson.Target.WriteTo(gzipStream);
+                }
+                else if (UrlResponse.DefaultContentEncoding == "deflate")
+                {
+                    using DeflateStream deflateStream = new(Session.Response.Body, CompressionMode.Compress);
+                    resultJson.Target.WriteTo(deflateStream);
+                }
+                else
+                {
+                    resultJson.Target.WriteTo(Session.Response.Body);
+                }
             }
         }
         else
@@ -342,7 +350,7 @@ public class SessionSetter(Session session)
             await urlRouter.Events.ResponseJsonGenerated(Session, resultJson.Target);
             if (Session.IsWebSocket)
             {
-                resultJson.Target.WriteTo(Session.Response.Body);
+                Session.WebSocketResponse?.SendMessage(resultJson.ToString());
             }
             else
             {
