@@ -165,32 +165,41 @@ public class SessionSetter(Session session)
             {
                 MediaType = "application/json"
             };
-            if (UrlResponse.DefaultContentEncoding == "br")
-            {
-                using BrotliStream brotliStream = new(Session.Response.Body, CompressionMode.Compress);
-                await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
-                urlResponseJson.Content.WriteTo(brotliStream);
-                urlResponseJson.Content.Dispose();
-            }
-            else if (UrlResponse.DefaultContentEncoding == "gzip")
-            {
-                using GZipStream gzipStream = new(Session.Response.Body, CompressionMode.Compress);
-                await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
-                urlResponseJson.Content.WriteTo(gzipStream);
-                urlResponseJson.Content.Dispose();
-            }
-            else if (UrlResponse.DefaultContentEncoding == "deflate")
-            {
-                using DeflateStream deflateStream = new(Session.Response.Body, CompressionMode.Compress);
-                await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
-                urlResponseJson.Content.WriteTo(deflateStream);
-                urlResponseJson.Content.Dispose();
-            }
-            else
+            if (Session.IsWebSocket)
             {
                 await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
                 urlResponseJson.Content.WriteTo(Session.Response.Body);
                 urlResponseJson.Content.Dispose();
+            }
+            else
+            {
+                if (UrlResponse.DefaultContentEncoding == "br")
+                {
+                    using BrotliStream brotliStream = new(Session.Response.Body, CompressionMode.Compress);
+                    await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
+                    urlResponseJson.Content.WriteTo(brotliStream);
+                    urlResponseJson.Content.Dispose();
+                }
+                else if (UrlResponse.DefaultContentEncoding == "gzip")
+                {
+                    using GZipStream gzipStream = new(Session.Response.Body, CompressionMode.Compress);
+                    await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
+                    urlResponseJson.Content.WriteTo(gzipStream);
+                    urlResponseJson.Content.Dispose();
+                }
+                else if (UrlResponse.DefaultContentEncoding == "deflate")
+                {
+                    using DeflateStream deflateStream = new(Session.Response.Body, CompressionMode.Compress);
+                    await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
+                    urlResponseJson.Content.WriteTo(deflateStream);
+                    urlResponseJson.Content.Dispose();
+                }
+                else
+                {
+                    await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
+                    urlResponseJson.Content.WriteTo(Session.Response.Body);
+                    urlResponseJson.Content.Dispose();
+                }
             }
         }
         else if (resultValue is MultiplyStreamFile multiplyStreamFile)
@@ -331,24 +340,31 @@ public class SessionSetter(Session session)
             };
             using NetMessageInterface resultJson = NetMessageInterface.New();
             await urlRouter.Events.ResponseJsonGenerated(Session, resultJson.Target);
-            if (UrlResponse.DefaultContentEncoding == "br")
+            if (Session.IsWebSocket)
             {
-                using BrotliStream brotliStream = new(Session.Response.Body, CompressionMode.Compress);
-                resultJson.Target.WriteTo(brotliStream);
-            }
-            else if (UrlResponse.DefaultContentEncoding == "gzip")
-            {
-                using GZipStream gzipStream = new(Session.Response.Body, CompressionMode.Compress);
-                resultJson.Target.WriteTo(gzipStream);
-            }
-            else if (UrlResponse.DefaultContentEncoding == "deflate")
-            {
-                using DeflateStream deflateStream = new(Session.Response.Body, CompressionMode.Compress);
-                resultJson.Target.WriteTo(deflateStream);
+                resultJson.Target.WriteTo(Session.Response.Body);
             }
             else
             {
-                resultJson.Target.WriteTo(Session.Response.Body);
+                if (UrlResponse.DefaultContentEncoding == "br")
+                {
+                    using BrotliStream brotliStream = new(Session.Response.Body, CompressionMode.Compress);
+                    resultJson.Target.WriteTo(brotliStream);
+                }
+                else if (UrlResponse.DefaultContentEncoding == "gzip")
+                {
+                    using GZipStream gzipStream = new(Session.Response.Body, CompressionMode.Compress);
+                    resultJson.Target.WriteTo(gzipStream);
+                }
+                else if (UrlResponse.DefaultContentEncoding == "deflate")
+                {
+                    using DeflateStream deflateStream = new(Session.Response.Body, CompressionMode.Compress);
+                    resultJson.Target.WriteTo(deflateStream);
+                }
+                else
+                {
+                    resultJson.Target.WriteTo(Session.Response.Body);
+                }
             }
         }
         return true;

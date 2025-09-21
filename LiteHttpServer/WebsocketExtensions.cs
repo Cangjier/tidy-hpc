@@ -33,7 +33,7 @@ public static class WebsocketExtensions
     }
 
     /// <summary>
-    /// 接受数据，如果是字节则默认为brotli压缩
+    /// 接受数据，如果是字节则默认无编码
     /// </summary>
     /// <param name="webSocket"></param>
     /// <param name="cancellationToken"></param>
@@ -84,61 +84,62 @@ public static class WebsocketExtensions
         memoryStream.Seek(0, SeekOrigin.Begin);
         if (isBinary)
         {
-            if(UrlResponse.DefaultContentEncoding == "br")
-            {
-                using var brotliStream = new BrotliStream(memoryStream, CompressionMode.Decompress);
-                using var decompressedStream = new MemoryStream();
-                try
-                {
-                    brotliStream.CopyTo(decompressedStream);
-                    return Util.UTF8.GetString(decompressedStream.ToArray());
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e);
-                    memoryStream.Seek(0, SeekOrigin.Begin);
-                    var resultText = Util.UTF8.GetString(memoryStream.ToArray());
-                    return resultText;
-                }
-            }
-            else if(UrlResponse.DefaultContentEncoding == "gzip")
-            {
-                using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
-                using var decompressedStream = new MemoryStream();
-                try
-                {
-                    gzipStream.CopyTo(decompressedStream);
-                    return Util.UTF8.GetString(decompressedStream.ToArray());
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e);
-                    memoryStream.Seek(0, SeekOrigin.Begin);
-                    var resultText = Util.UTF8.GetString(memoryStream.ToArray());
-                    return resultText;
-                }
-            }
-            else if(UrlResponse.DefaultContentEncoding == "deflate")
-            {
-                using var deflateStream = new DeflateStream(memoryStream, CompressionMode.Decompress);
-                using var decompressedStream = new MemoryStream();
-                try
-                {
-                    deflateStream.CopyTo(decompressedStream);
-                    return Util.UTF8.GetString(decompressedStream.ToArray());
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e);
-                    memoryStream.Seek(0, SeekOrigin.Begin);
-                    var resultText = Util.UTF8.GetString(memoryStream.ToArray());
-                    return resultText;
-                }
-            }
-            else
-            {
-                return Util.UTF8.GetString(memoryStream.ToArray());
-            }
+            return Util.UTF8.GetString(memoryStream.ToArray());
+            //if (UrlResponse.DefaultContentEncoding == "br")
+            //{
+            //    using var brotliStream = new BrotliStream(memoryStream, CompressionMode.Decompress);
+            //    using var decompressedStream = new MemoryStream();
+            //    try
+            //    {
+            //        brotliStream.CopyTo(decompressedStream);
+            //        return Util.UTF8.GetString(decompressedStream.ToArray());
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        Logger.Error(e);
+            //        memoryStream.Seek(0, SeekOrigin.Begin);
+            //        var resultText = Util.UTF8.GetString(memoryStream.ToArray());
+            //        return resultText;
+            //    }
+            //}
+            //else if(UrlResponse.DefaultContentEncoding == "gzip")
+            //{
+            //    using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+            //    using var decompressedStream = new MemoryStream();
+            //    try
+            //    {
+            //        gzipStream.CopyTo(decompressedStream);
+            //        return Util.UTF8.GetString(decompressedStream.ToArray());
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        Logger.Error(e);
+            //        memoryStream.Seek(0, SeekOrigin.Begin);
+            //        var resultText = Util.UTF8.GetString(memoryStream.ToArray());
+            //        return resultText;
+            //    }
+            //}
+            //else if(UrlResponse.DefaultContentEncoding == "deflate")
+            //{
+            //    using var deflateStream = new DeflateStream(memoryStream, CompressionMode.Decompress);
+            //    using var decompressedStream = new MemoryStream();
+            //    try
+            //    {
+            //        deflateStream.CopyTo(decompressedStream);
+            //        return Util.UTF8.GetString(decompressedStream.ToArray());
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        Logger.Error(e);
+            //        memoryStream.Seek(0, SeekOrigin.Begin);
+            //        var resultText = Util.UTF8.GetString(memoryStream.ToArray());
+            //        return resultText;
+            //    }
+            //}
+            //else
+            //{
+            //    return Util.UTF8.GetString(memoryStream.ToArray());
+            //}
         }
         else
         {
