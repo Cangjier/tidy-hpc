@@ -1,4 +1,4 @@
-﻿namespace TidyHPC.LiteHttpServer;
+﻿namespace TidyHPC.Routers.Urls.Interfaces;
 
 /// <summary>
 /// Websocket响应

@@ -35,6 +35,16 @@ public class Session : IDisposable
     public IResponse Response { get; private set; }
 
     /// <summary>
+    /// 是否为WebSocket请求
+    /// </summary>
+    public bool IsWebSocket => Response is IWebsocketResponse;
+
+    /// <summary>
+    /// WebSocket响应，如果不是WebSocket请求则为null
+    /// </summary>
+    public IWebsocketResponse? WebSocketResponse => Response as IWebsocketResponse;
+
+    /// <summary>
     /// 缓存数据
     /// </summary>
     public SessionCache Cache { get; private set; }
