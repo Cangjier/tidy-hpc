@@ -392,26 +392,37 @@ public class UrlRouter
                 using NetMessageInterface resultJson = NetMessageInterface.New();
                 await Events.ResponseJsonGenerated(session, resultJson.Target);
                 onMessage(resultJson);
-
-                if (UrlResponse.DefaultContentEncoding == "br")
+                if (session.IsWebSocket)
                 {
-                    using BrotliStream brotliStream = new(session.Response.Body, CompressionMode.Compress);
-                    resultJson.Target.WriteTo(brotliStream);
-                }
-                else if (UrlResponse.DefaultContentEncoding == "gzip")
-                {
-                    using GZipStream gzipStream = new(session.Response.Body, CompressionMode.Compress);
-                    resultJson.Target.WriteTo(gzipStream);
-                }
-                else if(UrlResponse.DefaultContentEncoding=="deflate")
-                {
-                    using DeflateStream deflateStream = new(session.Response.Body, CompressionMode.Compress);
-                    resultJson.Target.WriteTo(deflateStream);
+                    if(session.WebSocketResponse != null)
+                    {
+                        await session.WebSocketResponse.SendMessage(resultJson.Target.ToString());
+                    }
                 }
                 else
                 {
-                    resultJson.Target.WriteTo(session.Response.Body);
+
+                    if (UrlResponse.DefaultContentEncoding == "br")
+                    {
+                        using BrotliStream brotliStream = new(session.Response.Body, CompressionMode.Compress);
+                        resultJson.Target.WriteTo(brotliStream);
+                    }
+                    else if (UrlResponse.DefaultContentEncoding == "gzip")
+                    {
+                        using GZipStream gzipStream = new(session.Response.Body, CompressionMode.Compress);
+                        resultJson.Target.WriteTo(gzipStream);
+                    }
+                    else if (UrlResponse.DefaultContentEncoding == "deflate")
+                    {
+                        using DeflateStream deflateStream = new(session.Response.Body, CompressionMode.Compress);
+                        resultJson.Target.WriteTo(deflateStream);
+                    }
+                    else
+                    {
+                        resultJson.Target.WriteTo(session.Response.Body);
+                    }
                 }
+
             });
         };
         var sendErrorWrapper = async (Session session,int? code, string message,Exception? e) =>

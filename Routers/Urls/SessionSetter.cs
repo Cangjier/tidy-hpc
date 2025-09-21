@@ -167,9 +167,12 @@ public class SessionSetter(Session session)
             };
             if (Session.IsWebSocket)
             {
+
                 await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
-                //urlResponseJson.Content.WriteTo(Session.Response.Body);
-                Session.WebSocketResponse?.SendMessage(urlResponseJson.Content.ToString());
+                if (Session.WebSocketResponse != null)
+                {
+                    await Session.WebSocketResponse.SendMessage(urlResponseJson.Content.ToString());
+                }
                 urlResponseJson.Content.Dispose();
             }
             else
@@ -314,7 +317,10 @@ public class SessionSetter(Session session)
             await urlRouter.Events.ResponseJsonGenerated(Session, resultJson.Target);
             if (Session.IsWebSocket)
             {
-                Session.WebSocketResponse?.SendMessage(resultJson.ToString());
+                if (Session.WebSocketResponse != null)
+                {
+                    await Session.WebSocketResponse.SendMessage(resultJson.ToString());
+                }
             }
             else
             {
@@ -350,7 +356,10 @@ public class SessionSetter(Session session)
             await urlRouter.Events.ResponseJsonGenerated(Session, resultJson.Target);
             if (Session.IsWebSocket)
             {
-                Session.WebSocketResponse?.SendMessage(resultJson.ToString());
+                if(Session.WebSocketResponse != null)
+                {
+                    await Session.WebSocketResponse.SendMessage(resultJson.ToString());
+                }
             }
             else
             {
