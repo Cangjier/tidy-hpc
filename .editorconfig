@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# CA2252: 此 API 需要选择加入预览功能
+dotnet_diagnostic.CA2252.severity = none

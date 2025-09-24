@@ -12,8 +12,8 @@ public interface IServer
     /// <returns></returns>
     Task<Session> GetNextSession(CancellationToken cancellationToken);
 
-    // <summary>
-    /// 获取下一个会话
+    /// <summary>
+    /// 获取下一个会话（不支持取消）
     /// </summary>
     /// <returns></returns>
     Task<Session> GetNextSession();

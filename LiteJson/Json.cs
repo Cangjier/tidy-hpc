@@ -174,7 +174,9 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
 
     private static JsonSerializerOptions JsonSerializerOptionsIndented { get; } = new()
     {
+#if NET8_0_OR_GREATER
         TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
+#endif
         Encoder = JavaScriptEncoder,
         WriteIndented = true,
         Converters = { new UnsupportedConverter() }
@@ -182,7 +184,9 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
 
     private static JsonSerializerOptions JsonSerializerOptions { get; } = new()
     {
+#if NET8_0_OR_GREATER
         TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
+#endif
         Encoder = JavaScriptEncoder,
         WriteIndented = false,
         Converters = { new UnsupportedConverter()}
@@ -190,7 +194,9 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
 
     private static JsonSerializerOptions JsonDeserializerOptions { get; } = new()
     {
+#if NET8_0_OR_GREATER
         TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
+#endif
         Encoder = JavaScriptEncoder,
         AllowTrailingCommas = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
@@ -743,7 +749,11 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
         {
             if(Node is JsonNode jsonNode && other.Node is JsonNode otherJsonNode)
             {
+#if NET6_0
+                return JsonExtensions.DeepEquals(jsonNode, otherJsonNode);
+#else
                 return JsonNode.DeepEquals(jsonNode, otherJsonNode);
+#endif
             }
             else if(valueKind == JsonValueKind.String)
             {
