@@ -340,6 +340,82 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     }
 
     /// <summary>
+    /// Repair Json string
+    /// </summary>
+    /// <param name="raw"></param>
+    /// <returns></returns>
+    public static string Repair(string raw)
+    {
+        // 修复场景
+        // 1. {"value":"他说："xxxx""}
+        bool isInString = false;
+        List<int> quoteIndices = [];
+        void enqueueQuoteIndex(int index)
+        {
+            if (quoteIndices.Count >= 10)
+            {
+                quoteIndices.RemoveAt(0);
+            }
+            quoteIndices.Add(index);
+        }
+        char[] jsonFormatChars = ['{', '}', '[', ']', ':', ',', ' ', '\t', '\r', '\n'];
+        for(int charIndex = 0;charIndex<raw.Length;charIndex++)
+        {
+            var c = raw[charIndex];
+            if (c == '"')
+            {
+                if (isInString)
+                {
+                    if(charIndex > 0 && raw[charIndex - 1] == '\\')
+                    {
+                        // 转义引号
+                    }
+                    else
+                    {
+                        // 结束引号
+                        isInString = false;
+                        enqueueQuoteIndex(charIndex);
+                    }
+                }
+                else
+                {
+                    // 开始引号
+                    isInString = true;
+                    enqueueQuoteIndex(charIndex);
+                }
+            }
+            else if (isInString == false)
+            {
+                if(jsonFormatChars.Contains(c) == false)
+                {
+                    // 非法字符
+                    if (quoteIndices.Count > 0)
+                    {
+                        var lastQuoteIndex = quoteIndices.Last();
+                        raw = raw.Insert(lastQuoteIndex, "\\");
+                        charIndex++;
+                        quoteIndices.Clear();
+                        // 寻找下一个引号
+                        while (true)
+                        {
+                            charIndex++;
+                            if (charIndex >= raw.Length) break;
+                            if (raw[charIndex] == '"')
+                            {
+                                raw = raw.Insert(charIndex, "\\");
+                                charIndex++;
+                                isInString = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return raw;
+    }
+
+    /// <summary>
     /// Load Json from file until timeout
     /// </summary>
     /// <param name="path"></param>
