@@ -493,6 +493,10 @@ public partial struct Json
     /// <returns></returns>
     public Json Get(string key, Json defaultValue)
     {
+        if(IsArray&&int.TryParse(key,out var index))
+        {
+            return Get(index, defaultValue);
+        }
         if (!IsObject) return defaultValue;
         var obj = AsObject;
         if (obj.ContainsKey(key))

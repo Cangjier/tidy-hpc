@@ -130,7 +130,7 @@ public partial struct Json
         {
             return left.AsTimeSpan > right.AsTimeSpan;
         }
-        throw new Exception("Invalid operation");
+        throw new Exception($"Invalid operation:{left.Node?.GetType()}>{right.Node?.GetType()}");
     }
 
     /// <summary>

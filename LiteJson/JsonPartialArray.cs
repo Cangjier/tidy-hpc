@@ -48,6 +48,11 @@ public partial struct Json
             }
             return new(stringValue[index]);
         }
+        else if (IsObject)
+        {
+            var key = index.ToString();
+            return Get(key, defaultValue);
+        }
         else
         {
             throw new Exception($"Unsupported type:{GetValueKind()}");
