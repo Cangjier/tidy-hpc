@@ -135,7 +135,20 @@ public partial struct Json
     /// <param name="value"></param>
     public readonly void Set(int index, Json value)
     {
-        AssertArray(self => self[index] = value.Node);
+        if (IsArray)
+        {
+            var array = AsArray;
+            array[index] = value.Node;
+        }
+        else if (IsObject)
+        {
+            var key = index.ToString();
+            Set(key, value);
+        }
+        else
+        {
+            throw new Exception($"Unsupported type:{GetValueKind()}");
+        }
     }
 
     /// <summary>

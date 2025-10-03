@@ -434,6 +434,21 @@ public partial struct Json
         else if (toType == typeof(long)) return value.AsInt64;
         else if (toType == typeof(Guid)) return value.AsGuid;
         else if (toType == typeof(DateTime)) return value.Is<DateTime>() ? value.As<DateTime>() : DateTime.Parse(value.ToString());
+        else if (toType == typeof(TimeSpan))
+        {
+            if (value.Is<TimeSpan>())
+            {
+                return value.As<TimeSpan>();
+            }
+            else if (value.IsNumber)
+            {
+                return TimeSpan.FromMilliseconds(value.AsNumber);
+            }
+            else
+            {
+                return TimeSpan.Parse(value.ToString());
+            }
+        }
         else if (toType == typeof(string[]))
         {
             return value.ToArray(item => item.AsString);
