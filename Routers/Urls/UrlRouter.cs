@@ -161,9 +161,29 @@ public class UrlRouterEvents(UrlRouter urlRouter)
     }
 
     /// <summary>
-    /// 当处理过程中发生异常时触发
+    /// 当处理过程中发生异常时触发，如果HandleException被设置，则不会使用默认的异常处理逻辑
     /// </summary>
-    public Func<Session,string,Exception?,Task>? OnException { get; set; }
+    public Func<Session,string,Exception?,Task>? HandleException { get; set; }
+
+    /// <summary>
+    /// 当处理过程中发生异常时触发，只要发生异常就会触发
+    /// </summary>
+    public event Func<Session, string, Exception?, Task>? OnException = null;
+
+    /// <summary>
+    /// 触发异常事件
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="message"></param>
+    /// <param name="exception"></param>
+    /// <returns></returns>
+    public async Task OnExceptionInvoke(Session session, string message, Exception? exception)
+    {
+        if (OnException != null)
+        {
+            await OnException(session, message, exception);
+        }
+    }
 }
 
 /// <summary>
@@ -427,14 +447,15 @@ public class UrlRouter
         };
         var sendErrorWrapper = async (Session session,int? code, string message,Exception? e) =>
         {
-            if (Events.OnException != null)
+            if (Events.HandleException != null)
             {
-                await Events.OnException(session, message, e);
+                await Events.HandleException(session, message, e);
             }
             else
             {
                 await sendError(session, msg => msg.Error(code, message, e));
             }
+            await Events.OnExceptionInvoke(session, message, e);
         };
 
         RealMap.TryAdd(urlPattern, new UrlRouterRecord(urlPattern, urlRegex, async session =>
