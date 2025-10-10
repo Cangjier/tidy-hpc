@@ -133,17 +133,37 @@ public class UrlRouterEvents(UrlRouter urlRouter)
     /// <summary>
     /// 当没有路由时触发
     /// </summary>
-    public Func<string,Session,Task>? OnNoRoute { get; set; }
+    public Func<string,Session,Task>? HandleNoRoute { get; set; }
 
     internal async Task NoRoute(string url, Session session)
     {
-        if (OnNoRoute != null)
+        await OnNoRouteInvoke(url, session);
+        if (HandleNoRoute != null)
         {
-            await OnNoRoute(url, session);
+            await HandleNoRoute(url, session);
         }
         else
         {
             throw new NoRouterException(url);
+        }
+    }
+
+    /// <summary>
+    /// 当没有路由时触发，只要没有路由就会触发
+    /// </summary>
+    public event Func<string, Session, Task>? OnNoRoute = null;
+
+    /// <summary>
+    /// 触发没有路由事件
+    /// </summary>
+    /// <param name="url"></param>
+    /// <param name="session"></param>
+    /// <returns></returns>
+    internal async Task OnNoRouteInvoke(string url, Session session)
+    {
+        if (OnNoRoute != null)
+        {
+            await OnNoRoute(url, session);
         }
     }
 
@@ -447,6 +467,7 @@ public class UrlRouter
         };
         var sendErrorWrapper = async (Session session,int? code, string message,Exception? e) =>
         {
+            await Events.OnExceptionInvoke(session, message, e);
             if (Events.HandleException != null)
             {
                 await Events.HandleException(session, message, e);
@@ -455,7 +476,6 @@ public class UrlRouter
             {
                 await sendError(session, msg => msg.Error(code, message, e));
             }
-            await Events.OnExceptionInvoke(session, message, e);
         };
 
         RealMap.TryAdd(urlPattern, new UrlRouterRecord(urlPattern, urlRegex, async session =>
