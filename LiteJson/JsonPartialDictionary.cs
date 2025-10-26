@@ -28,15 +28,19 @@ public partial struct Json : IDictionary
         {
             if (key is string keyString)
             {
-                return this[new Json(keyString)];
+                return this[keyString];
             }
-            else if(key is Json keyJson)
+            else if(key is int keyInt)
+            {
+                return this[keyInt];
+            }
+            else if (key is Json keyJson)
             {
                 return this[keyJson];
             }
             else
             {
-                throw new NotImplementedException();
+                return this[new Json(key)];
             }
         }
         set
@@ -45,13 +49,17 @@ public partial struct Json : IDictionary
             {
                 this[keyString] = new Json(value);
             }
+            else if(key is int keyInt)
+            {
+                this[keyInt] = new Json(value);
+            }
             else if(key is Json keyJson)
             {
                 this[keyJson] = new Json(value);
             }
             else
             {
-                throw new NotImplementedException();
+                this[new Json(key)] = new Json(value);
             }
         }
     }
