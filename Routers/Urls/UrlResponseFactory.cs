@@ -140,4 +140,23 @@ public static class UrlResponseFactory
     {
         return new Responses.MultiplyStreamAttachment(streams, fileName, contentEncoding, null);
     }
+
+    /// <summary>
+    /// 创建状态码响应
+    /// </summary>
+    /// <param name="statusCode"></param>
+    /// <returns></returns>
+    public static Responses.ResponseStatusCode CreateStatusCode(int statusCode)
+    {
+        return new Responses.ResponseStatusCode(statusCode);
+    }
+
+    /// <summary>
+    /// 创建 None 响应
+    /// </summary>
+    /// <returns></returns>
+    public static Responses.NoneResponse CreateNone()
+    {
+        return new Responses.NoneResponse();
+    }
 }
