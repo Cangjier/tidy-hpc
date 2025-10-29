@@ -133,22 +133,24 @@ public class SessionSetter(Session session)
         }
         else if (resultValue is TextHtml urlResponseTextHtml)
         {
-            Session.Response.Headers.ContentEncoding = UrlResponse.DefaultContentEncoding;
+            var contentEncoding = urlResponseTextHtml.ContentEncoding ?? UrlResponse.DefaultContentEncoding;
+            Session.Response.Headers.ContentEncoding = contentEncoding;
             Session.Response.Headers.ContentType = new Headers.ContentType()
             {
                 MediaType = "text/html"
             };
-            if (UrlResponse.DefaultContentEncoding == "br")
+            
+            if (contentEncoding == "br")
             {
                 using BrotliStream brotliStream = new(Session.Response.Body, CompressionMode.Compress);
                 await brotliStream.WriteAsync(Util.UTF8.GetBytes(urlResponseTextHtml.Content));
             }
-            else if (UrlResponse.DefaultContentEncoding == "gzip")
+            else if (contentEncoding == "gzip")
             {
                 using GZipStream gzipStream = new(Session.Response.Body, CompressionMode.Compress);
                 await gzipStream.WriteAsync(Util.UTF8.GetBytes(urlResponseTextHtml.Content));
             }
-            else if (UrlResponse.DefaultContentEncoding == "deflate")
+            else if (contentEncoding == "deflate")
             {
                 using DeflateStream deflateStream = new(Session.Response.Body, CompressionMode.Compress);
                 await deflateStream.WriteAsync(Util.UTF8.GetBytes(urlResponseTextHtml.Content));
@@ -160,7 +162,8 @@ public class SessionSetter(Session session)
         }
         else if (resultValue is ApplicationJson urlResponseJson)
         {
-            Session.Response.Headers.ContentEncoding = UrlResponse.DefaultContentEncoding;
+            var contentEncoding = urlResponseJson.ContentEncoding ?? UrlResponse.DefaultContentEncoding;
+            Session.Response.Headers.ContentEncoding = contentEncoding;
             Session.Response.Headers.ContentType = new Headers.ContentType()
             {
                 MediaType = "application/json"
@@ -177,21 +180,21 @@ public class SessionSetter(Session session)
             }
             else
             {
-                if (UrlResponse.DefaultContentEncoding == "br")
+                if (contentEncoding == "br")
                 {
                     using BrotliStream brotliStream = new(Session.Response.Body, CompressionMode.Compress);
                     await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
                     urlResponseJson.Content.WriteTo(brotliStream);
                     urlResponseJson.Content.Dispose();
                 }
-                else if (UrlResponse.DefaultContentEncoding == "gzip")
+                else if (contentEncoding == "gzip")
                 {
                     using GZipStream gzipStream = new(Session.Response.Body, CompressionMode.Compress);
                     await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
                     urlResponseJson.Content.WriteTo(gzipStream);
                     urlResponseJson.Content.Dispose();
                 }
-                else if (UrlResponse.DefaultContentEncoding == "deflate")
+                else if (contentEncoding == "deflate")
                 {
                     using DeflateStream deflateStream = new(Session.Response.Body, CompressionMode.Compress);
                     await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);

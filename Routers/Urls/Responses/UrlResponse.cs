@@ -54,8 +54,21 @@ public record BrotliFile(string FilePath, string ContentDisposition, string Rela
 /// <param name="FilePath"></param>
 /// <param name="FileName"></param>
 /// <param name="RelativeFilePath"></param>
-public record Attachment(string FilePath, string FileName, string RelativeFilePath)
-    : BinaryFile(FilePath, Mime.DetectByFileExtension(Path.GetExtension(FilePath)), $"attachment; filename=\"{FileName}\"", DefaultContentEncoding, null, RelativeFilePath);
+/// <param name="ContentEncoding"></param>
+public record Attachment(string FilePath, string FileName, string RelativeFilePath,string ContentEncoding)
+    : BinaryFile(FilePath, Mime.DetectByFileExtension(Path.GetExtension(FilePath)), $"attachment; filename=\"{FileName}\"", ContentEncoding, null, RelativeFilePath)
+{
+    /// <summary>
+    /// 附件响应，使用默认内容编码
+    /// </summary>
+    /// <param name="FilePath"></param>
+    /// <param name="FileName"></param>
+    /// <param name="RelativeFilePath"></param>
+    public Attachment(string FilePath, string FileName, string RelativeFilePath)
+        : this(FilePath, FileName, RelativeFilePath, DefaultContentEncoding)
+    {
+    }
+}
 
 /// <summary>
 /// Brotli 附件响应
@@ -69,14 +82,33 @@ public record BrotliAttachment(string Path, string FileName)
 /// Html 文本响应
 /// </summary>
 /// <param name="Content"></param>
-public record TextHtml(string Content) : UrlResponse;
+/// <param name="ContentEncoding"></param>
+public record TextHtml(string Content,string ContentEncoding) : UrlResponse
+{
+    /// <summary>
+    /// Html 文本响应，使用默认内容编码
+    /// </summary>
+    /// <param name="content"></param>
+    public TextHtml(string content) : this(content, UrlResponse.DefaultContentEncoding)
+    {
+    }
+}
 
 /// <summary>
 /// Json 响应
 /// </summary>
 /// <param name="Content"></param>
-public record ApplicationJson(Json Content) : UrlResponse
+/// <param name="ContentEncoding"></param>
+public record ApplicationJson(Json Content,string ContentEncoding) : UrlResponse
 {
+    /// <summary>
+    /// Json 响应，使用默认内容编码
+    /// </summary>
+    /// <param name="content"></param>
+    public ApplicationJson(Json content) : this(content, UrlResponse.DefaultContentEncoding)
+    {
+    }
+
     /// <summary>
     /// Implicit conversion from Json to ApplicationJson
     /// </summary>
