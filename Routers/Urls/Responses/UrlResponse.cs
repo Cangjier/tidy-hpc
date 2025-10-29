@@ -71,6 +71,18 @@ public record Attachment(string FilePath, string FileName, string RelativeFilePa
 }
 
 /// <summary>
+/// 附件流响应
+/// </summary>
+/// <param name="Stream"></param>
+/// <param name="FileName"></param>
+/// <param name="ContentEncoding"></param>
+public record StreamAttachment(Stream Stream, string FileName, string ContentEncoding)
+    : MultiplyStreamAttachment([Stream], FileName, ContentEncoding, null)
+{
+
+}
+
+/// <summary>
 /// Brotli 附件响应
 /// </summary>
 /// <param name="Path"></param>
@@ -140,9 +152,21 @@ public record MultiplyStreamFile(
 /// </summary>
 /// <param name="Streams"></param>
 /// <param name="FileName"></param>
+/// <param name="ContentEncoding"></param>
 /// <param name="CacheControl"></param>
-public record MultiplyStreamAttachment(Stream[] Streams, string FileName, CacheControlHeaderValue? CacheControl)
-    : MultiplyStreamFile(Streams, Mime.DetectByFileExtension(Path.GetExtension(FileName)), $"attachment; filename=\"{FileName}\"", DefaultContentEncoding, null,CacheControl);
+public record MultiplyStreamAttachment(Stream[] Streams, string FileName,string ContentEncoding, CacheControlHeaderValue? CacheControl)
+    : MultiplyStreamFile(Streams, Mime.DetectByFileExtension(Path.GetExtension(FileName)), $"attachment; filename=\"{FileName}\"", ContentEncoding, null, CacheControl)
+{
+    /// <summary>
+    /// 多流附件响应，使用默认内容编码
+    /// </summary>
+    /// <param name="Streams"></param>
+    /// <param name="FileName"></param>
+    /// <param name="CacheControl"></param>
+    public MultiplyStreamAttachment(Stream[] Streams, string FileName, CacheControlHeaderValue? CacheControl): this(Streams, FileName, UrlResponse.DefaultContentEncoding, CacheControl)
+    {
+    }
+}
 
 /// <summary>
 /// 重定向

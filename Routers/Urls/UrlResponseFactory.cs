@@ -1,4 +1,6 @@
-﻿namespace TidyHPC.Routers.Urls;
+﻿using TidyHPC.LiteJson;
+
+namespace TidyHPC.Routers.Urls;
 
 /// <summary>
 /// Url 响应工厂
@@ -48,6 +50,27 @@ public static class UrlResponseFactory
     }
 
     /// <summary>
+    /// 创建 JSON 响应
+    /// </summary>
+    /// <param name="content"></param>
+    /// <returns></returns>
+    public static Responses.ApplicationJson CreateApplicationJson(Json content)
+    {
+        return new Responses.ApplicationJson(content);
+    }
+
+    /// <summary>
+    /// 创建 JSON 响应
+    /// </summary>
+    /// <param name="content"></param>
+    /// <param name="contentEncoding"></param>
+    /// <returns></returns>
+    public static Responses.ApplicationJson CreateApplicationJson(Json content, string contentEncoding)
+    {
+        return new Responses.ApplicationJson(content, contentEncoding);
+    }
+
+    /// <summary>
     /// 创建附件响应
     /// </summary>
     /// <param name="filePath"></param>
@@ -70,5 +93,28 @@ public static class UrlResponseFactory
     public static Responses.Attachment CreateAttachment(string filePath, string fileName, string relativeFilePath, string contentEncoding)
     {
         return new Responses.Attachment(filePath, fileName, relativeFilePath, contentEncoding);
+    }
+
+    /// <summary>
+    /// 创建附件流响应
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <param name="fileName"></param>
+    /// <returns></returns>
+    public static Responses.StreamAttachment CreateAttachment(Stream stream,string fileName)
+    {
+        return new Responses.StreamAttachment(stream, fileName, Responses.UrlResponse.DefaultContentEncoding);
+    }
+
+    /// <summary>
+    /// 创建附件流响应
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <param name="fileName"></param>
+    /// <param name="contentEncoding"></param>
+    /// <returns></returns>
+    public static Responses.StreamAttachment CreateAttachment(Stream stream, string fileName, string contentEncoding)
+    {
+        return new Responses.StreamAttachment(stream, fileName, contentEncoding);
     }
 }
