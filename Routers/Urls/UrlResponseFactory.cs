@@ -117,4 +117,27 @@ public static class UrlResponseFactory
     {
         return new Responses.StreamAttachment(stream, fileName, contentEncoding);
     }
+
+    /// <summary>
+    /// 创建多流附件响应
+    /// </summary>
+    /// <param name="streams"></param>
+    /// <param name="fileName"></param>
+    /// <returns></returns>
+    public static Responses.MultiplyStreamAttachment CreateAttachment(Stream[] streams, string fileName)
+    {
+        return new Responses.MultiplyStreamAttachment(streams, fileName, null);
+    }
+
+    /// <summary>
+    /// 创建多流附件响应
+    /// </summary>
+    /// <param name="streams"></param>
+    /// <param name="fileName"></param>
+    /// <param name="contentEncoding"></param>
+    /// <returns></returns>
+    public static Responses.MultiplyStreamAttachment CreateAttachment(Stream[] streams, string fileName, string contentEncoding)
+    {
+        return new Responses.MultiplyStreamAttachment(streams, fileName, contentEncoding, null);
+    }
 }
