@@ -81,4 +81,13 @@ public class QueueLogger:IDisposable
     {
         await LinesQueue.WaitForTaskEmptyAsync();
     }
+
+    /// <summary>
+    /// 等待日志清空
+    /// </summary>
+    /// <returns></returns>
+    public async Task WaitForEmpty(TimeSpan timeout)
+    {
+        await LinesQueue.WaitForTaskEmptyAsync(timeout);
+    }
 }

@@ -198,6 +198,15 @@ public class TaskProcessorQueue<TValue>
     }
 
     /// <summary>
+    /// 等待任务队列为空，并且所有处理者都完成
+    /// </summary>
+    /// <returns></returns>
+    public async Task WaitForTaskEmptyAsync(TimeSpan timeout)
+    {
+        await TaskEmptySemaphore.WaitUntilZeroAsync().WaitAsync(timeout);
+    }
+
+    /// <summary>
     /// 添加处理者
     /// </summary>
     public void AddProcessor(IProcessor<TValue> processor)

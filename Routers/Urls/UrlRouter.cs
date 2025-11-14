@@ -295,6 +295,10 @@ public class UrlRouter
                     {
                         await item.Value.Handler(session);
                     }
+                    catch (TargetInvocationException targetInvocationException)
+                    {
+                        Logger.Error(targetInvocationException.InnerException);
+                    }
                     catch (Exception e)
                     {
                         Logger.Error(e);
@@ -554,6 +558,12 @@ public class UrlRouter
                     }
                 }
             }
+            catch(TargetInvocationException targetInvocationException)
+            {
+                Logger.Error(targetInvocationException.InnerException);
+                await sendErrorWrapper(session, -1, targetInvocationException.InnerException?.Message ?? "", targetInvocationException.InnerException);
+                return;
+            }
             catch(Exception e)
             {
                 Logger.Error(e);
@@ -567,7 +577,12 @@ public class UrlRouter
                 result = method.Invoke(instance, arguments);
                 if (result is Task resultTask) await resultTask;
             }
-            catch(Exception e)
+            catch (TargetInvocationException targetInvocationException)
+            {
+                await sendErrorWrapper(session, -1, targetInvocationException.InnerException?.Message ?? "", targetInvocationException.InnerException);
+                return;
+            }
+            catch (Exception e)
             {
                 await sendErrorWrapper(session, -1, e.Message, e);
                 return;
