@@ -7,8 +7,22 @@ using System.Threading.Tasks;
 using TidyHPC.Terminal.Linux;
 using TidyHPC.Terminal.Windows;
 
+/// <summary>
+/// 终端接口
+/// </summary>
 public interface ITerminal : IDisposable
 {
+    /// <summary>
+    /// 终端唯一标识符
+    /// </summary>
+    public Guid ID { get; set; }
+
+    /// <summary>
+    /// 创建终端实例
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    /// <exception cref="PlatformNotSupportedException"></exception>
     public static ITerminal CreateTerminal()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -29,6 +43,10 @@ public interface ITerminal : IDisposable
         }
     }
 
+    /// <summary>
+    /// 获取默认Shell路径
+    /// </summary>
+    /// <returns></returns>
     public static string GetDefaultShell()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -49,9 +67,7 @@ public interface ITerminal : IDisposable
     /// <summary>
     /// 启动终端
     /// </summary>
-    /// <param name="shell">Shell路径（如：/bin/bash, cmd.exe）</param>
-    /// <param name="columns">终端列数</param>
-    /// <param name="rows">终端行数</param>
+    /// <param name="options">选项</param>
     /// <param name="cancellationToken">取消令牌</param>
     Task<bool> StartAsync(TerminalOptions options,CancellationToken cancellationToken = default);
 
@@ -66,11 +82,33 @@ public interface ITerminal : IDisposable
     Task ResizeAsync(int columns, int rows, CancellationToken cancellationToken = default);
 }
 
+/// <summary>
+/// 终端选项
+/// </summary>
 public class TerminalOptions
 {
+    /// <summary>
+    /// 工作目录
+    /// </summary>
     public string WorkingDirectory { get; set; } = Environment.CurrentDirectory;
+
+    /// <summary>
+    /// 环境变量
+    /// </summary>
     public Dictionary<string, string> EnvironmentVariables { get; set; } = [];
+
+    /// <summary>
+    /// 终端列数
+    /// </summary>
     public int Columns { get; set; } = 80;
+
+    /// <summary>
+    /// 终端行数
+    /// </summary>
     public int Rows { get; set; } = 24;
+
+    /// <summary>
+    /// 使用的Shell
+    /// </summary>
     public string Shell { get; set; } = ITerminal.GetDefaultShell();
 }

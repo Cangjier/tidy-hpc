@@ -3,6 +3,7 @@
 namespace TidyHPC.Terminal.Windows;
 internal class WindowsTerminal : ITerminal
 {
+    public Guid ID { get; set; } = Guid.NewGuid();
     public bool IsRunning => throw new NotImplementedException();
 
     public event Action<byte[],int>? OutputReceived;

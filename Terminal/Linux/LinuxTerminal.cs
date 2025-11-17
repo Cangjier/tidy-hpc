@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 
 using static TidyHPC.Terminal.Linux.Native.PtyApi;
 
+/// <summary>
+/// Linux 终端实现
+/// </summary>
 public class LinuxTerminal : ITerminal
 {
     private const int BufferSize = 4096;
@@ -23,13 +26,27 @@ public class LinuxTerminal : ITerminal
     private int SlaveFileDescription = -1;
     private int ChildProcessID = -1;
     private bool IsDisposed = false;
-    private Stream MasterStream;
-    private CancellationTokenSource ReadCancellationSource;
-    private Task ReadTask;
+    private Stream? MasterStream;
+    private CancellationTokenSource? ReadCancellationSource;
+    private Task? ReadTask;
 
-    public event Action<byte[], int> OutputReceived;
+    /// <summary>
+    /// 终端唯一标识
+    /// </summary>
+    public Guid ID { get; set; } = Guid.NewGuid();
 
+    /// <summary>
+    /// 终端输出事件
+    /// </summary>
+    public event Action<byte[], int>? OutputReceived;
 
+    /// <summary>
+    /// 启动终端
+    /// </summary>
+    /// <param name="options"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public async Task<bool> StartAsync(TerminalOptions options, CancellationToken cancellationToken = default)
     {
         if (MasterFileDescription != -1)
@@ -220,9 +237,9 @@ public class LinuxTerminal : ITerminal
         return envVars.ToArray();
     }
 
-    private string[] PrepareExecArgs(string shell, string[] args)
+    private string?[] PrepareExecArgs(string shell, string?[] args)
     {
-        var execArgs = new List<string> { shell };
+        var execArgs = new List<string?> { shell };
         execArgs.AddRange(args);
         execArgs.Add(null); // 必须以 null 结尾
         return execArgs.ToArray();
@@ -234,7 +251,10 @@ public class LinuxTerminal : ITerminal
         Environment.Exit(1);
     }
 
-    // 添加进程状态检查方法
+    /// <summary>
+    /// 检查终端是否仍在运行
+    /// </summary>
+    /// <returns></returns>
     public bool IsRunning()
     {
         if (ChildProcessID <= 0) return false;
@@ -245,31 +265,6 @@ public class LinuxTerminal : ITerminal
             return false; // 进程已结束
         }
         return true;
-    }
-
-    private string[] GetExecArgs(string shell, string[] args)
-    {
-        var execArgs = new List<string> { shell };
-        execArgs.AddRange(args);
-        execArgs.Add(null); // 必须以 null 结尾
-        return execArgs.ToArray();
-    }
-
-    private string[] PrepareEnvironmentVariables()
-    {
-        var envVars = new List<string>();
-
-        // 添加标准环境变量
-        foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
-        {
-            envVars.Add($"{entry.Key}={entry.Value}");
-        }
-
-        // 添加终端类型
-        envVars.Add("TERM=xterm-256color");
-
-        envVars.Add(null); // 必须以 null 结尾
-        return envVars.ToArray();
     }
 
     private async Task ReadOutputAsync(CancellationToken cancellationToken)
@@ -306,6 +301,14 @@ public class LinuxTerminal : ITerminal
         }
     }
 
+    /// <summary>
+    /// 向终端输入数据
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <param name="length"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public async Task WriteInputAsync(byte[] buffer, int length, CancellationToken cancellationToken = default)
     {
         if (MasterStream == null || !MasterStream.CanWrite)
@@ -315,6 +318,14 @@ public class LinuxTerminal : ITerminal
         await MasterStream.FlushAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// 调整终端大小
+    /// </summary>
+    /// <param name="columns"></param>
+    /// <param name="rows"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public Task ResizeAsync(int columns, int rows, CancellationToken cancellationToken = default)
     {
         if (MasterFileDescription == -1)
@@ -338,6 +349,9 @@ public class LinuxTerminal : ITerminal
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// 释放资源
+    /// </summary>
     public void Dispose()
     {
         if (IsDisposed) return;

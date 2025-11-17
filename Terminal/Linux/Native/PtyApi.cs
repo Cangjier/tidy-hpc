@@ -36,7 +36,7 @@ internal static class PtyApi
     public static extern int dup2(int oldfd, int newfd);
 
     [DllImport("libc", SetLastError = true)]
-    public static extern int execve(string file, string[] argv, string[] envp);
+    public static extern int execve(string? file, string?[] argv, string?[] envp);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct WinSize
