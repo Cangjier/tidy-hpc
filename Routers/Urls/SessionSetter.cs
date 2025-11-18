@@ -120,7 +120,7 @@ public class SessionSetter(Session session)
                         using DeflateStream deflateStream = new(Session.Response.Body, CompressionMode.Compress);
                         await fileStream.CopyToAsync(deflateStream);
                     }
-                    else if (string.IsNullOrEmpty(urlResponseFile.ContentEncoding))
+                    else if (urlResponseFile.ContentEncoding==null||urlResponseFile.ContentEncoding.Trim()=="")
                     {
                         await fileStream.CopyToAsync(Session.Response.Body);
                     }
@@ -236,7 +236,7 @@ public class SessionSetter(Session session)
                     stream.Dispose();
                 }
             }
-            else if (multiplyStreamFile.FileEncoding == null && multiplyStreamFile.ContentEncoding != null)
+            else if (string.IsNullOrEmpty(multiplyStreamFile.FileEncoding))
             {
                 if (multiplyStreamFile.ContentEncoding == "br")
                 {
@@ -262,6 +262,14 @@ public class SessionSetter(Session session)
                     foreach (var stream in multiplyStreamFile.Streams)
                     {
                         await stream.CopyToAsync(deflateStream);
+                        stream.Dispose();
+                    }
+                }
+                else if (string.IsNullOrEmpty(multiplyStreamFile.ContentEncoding))
+                {
+                    foreach (var stream in multiplyStreamFile.Streams)
+                    {
+                        await stream.CopyToAsync(Session.Response.Body);
                         stream.Dispose();
                     }
                 }
