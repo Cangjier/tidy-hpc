@@ -27,7 +27,7 @@ public class SessionSetter(Session session)
         {
             Session.Cache.FilterStatus = filterResult.Status;
         }
-        else if(resultValue is NoneResponse)
+        else if (resultValue is NoneResponse)
         {
 
         }
@@ -86,7 +86,7 @@ public class SessionSetter(Session session)
             }
             else
             {
-                if (urlResponseFile.ContentEncoding != null)
+                if (string.IsNullOrEmpty(urlResponseFile.ContentEncoding) == false)
                 {
                     Session.Response.Headers.ContentEncoding = urlResponseFile.ContentEncoding;
                 }
@@ -101,7 +101,7 @@ public class SessionSetter(Session session)
                     using FileStream fileStream = File.OpenRead(urlResponseFile.FilePath);
                     await fileStream.CopyToAsync(Session.Response.Body);
                 }
-                else if (urlResponseFile.FileEncoding == null && urlResponseFile.ContentEncoding != null)
+                else if (string.IsNullOrEmpty(urlResponseFile.FileEncoding))
                 {
                     //文件编码为空，但是内容编码不为空，使用内容编码压缩
                     using FileStream fileStream = File.OpenRead(urlResponseFile.FilePath);
@@ -119,6 +119,10 @@ public class SessionSetter(Session session)
                     {
                         using DeflateStream deflateStream = new(Session.Response.Body, CompressionMode.Compress);
                         await fileStream.CopyToAsync(deflateStream);
+                    }
+                    else if (string.IsNullOrEmpty(urlResponseFile.ContentEncoding))
+                    {
+                        await fileStream.CopyToAsync(Session.Response.Body);
                     }
                     else
                     {
@@ -139,7 +143,7 @@ public class SessionSetter(Session session)
             {
                 MediaType = "text/html"
             };
-            
+
             if (contentEncoding == "br")
             {
                 using BrotliStream brotliStream = new(Session.Response.Body, CompressionMode.Compress);
@@ -359,7 +363,7 @@ public class SessionSetter(Session session)
             await urlRouter.Events.ResponseJsonGenerated(Session, resultJson.Target);
             if (Session.IsWebSocket)
             {
-                if(Session.WebSocketResponse != null)
+                if (Session.WebSocketResponse != null)
                 {
                     await Session.WebSocketResponse.SendMessage(resultJson.ToString());
                 }
