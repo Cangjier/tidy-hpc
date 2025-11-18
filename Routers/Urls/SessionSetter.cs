@@ -126,7 +126,7 @@ public class SessionSetter(Session session)
                     }
                     else
                     {
-                        throw new NotSupportedException("不支持的内容编码");
+                        throw new NotSupportedException($"不支持的内容编码: {urlResponseFile.ContentEncoding}");
                     }
                 }
                 else
