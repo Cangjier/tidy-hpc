@@ -17,7 +17,21 @@ using static TidyHPC.Terminal.Linux.Native.PtyApi;
 /// </summary>
 public class LinuxTerminal : ITerminal
 {
-    private const int BufferSize = 4096;
+    /// <summary>
+    /// 创建 Linux 终端实例
+    /// </summary>
+    /// <param name="options">终端选项</param>
+    public LinuxTerminal(TerminalOptions options)
+    {
+        Options = options;
+    }
+    private TerminalOptions Options { get; }
+
+    /// <summary>
+    /// 输出缓冲区大小
+    /// </summary>
+    public int OutputBufferSize => Options.OutputBufferSize;
+
     private const int STDIN_FILENO = 0;
     private const int STDOUT_FILENO = 1;
     private const int STDERR_FILENO = 2;
@@ -38,16 +52,15 @@ public class LinuxTerminal : ITerminal
     /// <summary>
     /// 终端输出事件
     /// </summary>
-    public event Action<byte[], int>? OutputReceived;
+    public event Func<byte[], int, Task>? OutputReceived;
 
     /// <summary>
     /// 启动终端
     /// </summary>
-    /// <param name="options"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public async Task<bool> StartAsync(TerminalOptions options, CancellationToken cancellationToken = default)
+    public async Task<bool> StartAsync(CancellationToken cancellationToken = default)
     {
         if (MasterFileDescription != -1)
             throw new InvalidOperationException("终端已经启动");
@@ -70,7 +83,7 @@ public class LinuxTerminal : ITerminal
 
             if (ChildProcessID == 0) // 子进程
             {
-                ChildProcess(options);
+                ChildProcess();
                 return false; // 子进程不会执行到这里
             }
             else // 父进程
@@ -80,10 +93,10 @@ public class LinuxTerminal : ITerminal
 
                 // 创建流用于读写
                 MasterStream = new FileStream(new Microsoft.Win32.SafeHandles.SafeFileHandle(
-                    (IntPtr)MasterFileDescription, false), FileAccess.ReadWrite, BufferSize);
+                    (IntPtr)MasterFileDescription, false), FileAccess.ReadWrite, Options.OutputBufferSize);
 
                 // 调整终端大小
-                await ResizeAsync(options.Columns, options.Rows, cancellationToken);
+                await ResizeAsync(Options.Columns, Options.Rows, cancellationToken);
 
                 // 开始读取输出
                 ReadCancellationSource = new CancellationTokenSource();
@@ -99,7 +112,7 @@ public class LinuxTerminal : ITerminal
         }
     }
 
-    private void ChildProcess(TerminalOptions options)
+    private void ChildProcess()
     {
         try
         {
@@ -112,26 +125,26 @@ public class LinuxTerminal : ITerminal
             }
 
             // 设置工作目录
-            if (!string.IsNullOrEmpty(options.WorkingDirectory))
+            if (!string.IsNullOrEmpty(Options.WorkingDirectory))
             {
-                if (!Directory.Exists(options.WorkingDirectory))
+                if (!Directory.Exists(Options.WorkingDirectory))
                 {
-                    ExitWithError($"Working directory not found: {options.WorkingDirectory}");
+                    ExitWithError($"Working directory not found: {Options.WorkingDirectory}");
                 }
-                Directory.SetCurrentDirectory(options.WorkingDirectory);
+                Directory.SetCurrentDirectory(Options.WorkingDirectory);
             }
 
             // 设置环境变量（合并系统环境变量和自定义环境变量）
-            SetEnvironmentVariables(options.EnvironmentVariables);
+            SetEnvironmentVariables(Options.EnvironmentVariables);
 
             // 解析 shell 命令
-            var shellArgs = ParseShellCommand(options.Shell);
+            var shellArgs = ParseShellCommand(Options.Shell);
             var shell = shellArgs[0];
             var args = shellArgs.Length > 1 ? shellArgs[1..] : Array.Empty<string>();
 
             // 准备执行参数
             var execArgs = PrepareExecArgs(shell, args);
-            var envVars = PrepareEnvironmentVariables(options.EnvironmentVariables);
+            var envVars = PrepareEnvironmentVariables(Options.EnvironmentVariables);
 
             // 执行命令
             execve(execArgs[0], execArgs, envVars);
@@ -269,7 +282,7 @@ public class LinuxTerminal : ITerminal
 
     private async Task ReadOutputAsync(CancellationToken cancellationToken)
     {
-        var buffer = new byte[BufferSize];
+        var buffer = new byte[Options.OutputBufferSize];
 
         try
         {
@@ -278,7 +291,10 @@ public class LinuxTerminal : ITerminal
                 var bytesRead = await MasterStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
                 if (bytesRead > 0)
                 {
-                    OutputReceived?.Invoke(buffer, bytesRead);
+                    if(OutputReceived is not null)
+                    {
+                        await OutputReceived(buffer, bytesRead);
+                    }
                 }
                 else
                 {

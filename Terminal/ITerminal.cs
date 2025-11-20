@@ -18,20 +18,25 @@ public interface ITerminal : IDisposable
     public Guid ID { get; set; }
 
     /// <summary>
+    /// 输出缓冲区大小
+    /// </summary>
+    public int OutputBufferSize { get; }
+
+    /// <summary>
     /// 创建终端实例
     /// </summary>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
     /// <exception cref="PlatformNotSupportedException"></exception>
-    public static ITerminal CreateTerminal()
+    public static ITerminal CreateTerminal(TerminalOptions options)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            return new WindowsTerminal();
+            return new WindowsTerminal(options);
         }
-        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            return new LinuxTerminal();
+            return new LinuxTerminal(options);
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
@@ -62,14 +67,13 @@ public interface ITerminal : IDisposable
     /// <summary>
     /// 终端输出事件
     /// </summary>
-    event Action<byte[],int> OutputReceived;
+    event Func<byte[], int, Task> OutputReceived;
 
     /// <summary>
     /// 启动终端
     /// </summary>
-    /// <param name="options">选项</param>
     /// <param name="cancellationToken">取消令牌</param>
-    Task<bool> StartAsync(TerminalOptions options,CancellationToken cancellationToken = default);
+    Task<bool> StartAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 向终端输入数据
@@ -106,6 +110,11 @@ public class TerminalOptions
     /// 终端行数
     /// </summary>
     public int Rows { get; set; } = 24;
+
+    /// <summary>
+    /// 输出缓冲区大小
+    /// </summary>
+    public int OutputBufferSize { get; set; } = 1024;
 
     /// <summary>
     /// 使用的Shell
