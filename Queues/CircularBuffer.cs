@@ -3,9 +3,9 @@ namespace TidyHPC.Queues;
 /// <summary>
 /// 循环缓存区
 /// </summary>
-public class CircularBuffer(int size)
+public class CircularBuffer<T>(int size)
 {
-    private byte[] Buffer { get; } = new byte[size];
+    private T[] Buffer { get; } = new T[size];
     private int Index { get; set; } = 0;
     private bool IsFull { get; set; } = false;
 
@@ -15,7 +15,7 @@ public class CircularBuffer(int size)
     /// 写入数据
     /// </summary>
     /// <param name="bytes">要写入的数据</param>
-    public void Write(Span<byte> bytes)
+    public void Write(ReadOnlySpan<T> bytes)
     {
         lock (LockObject)
         {
@@ -54,13 +54,13 @@ public class CircularBuffer(int size)
     /// 将缓存区中的数据转换为数组
     /// </summary>
     /// <returns>转换后的数组</returns>
-    public byte[] ToArray()
+    public T[] ToArray()
     {
         lock (LockObject)
         {
             if (IsFull)
             {
-                byte[] result = new byte[Buffer.Length];
+                T[] result = new T[Buffer.Length];
                 if (Index == 0)
                 {
                     Buffer.CopyTo(result.AsSpan(0, result.Length));
