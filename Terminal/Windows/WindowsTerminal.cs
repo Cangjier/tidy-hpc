@@ -64,7 +64,7 @@ internal class WindowsTerminal : ITerminal
                 throw new InvalidOperationException("Pipes are not initialized.");
             }
             PseudoConsole = PseudoConsole.Create(InputPipe.ReadSide, OutputPipe.WriteSide, (short)Options.Columns, (short)Options.Rows);
-            Process = ProcessFactory.Start(Options.Shell, PseudoConsole.PseudoConsoleThreadAttribute, PseudoConsole.Handle);
+            Process = ProcessFactory.Start(Options.Shell, PseudoConsole.PseudoConsoleThreadAttribute, PseudoConsole.Handle, Options.WorkingDirectory);
             OutputTask = Task.Run(async () =>
             {
                 using var pseudoConsoleOutput = new FileStream(OutputPipe.ReadSide, FileAccess.Read);
@@ -72,7 +72,7 @@ internal class WindowsTerminal : ITerminal
                 int bytesRead;
                 while ((bytesRead = await pseudoConsoleOutput.ReadAsync(buffer)) > 0)
                 {
-                    if(OutputReceived is not null)
+                    if (OutputReceived is not null)
                     {
                         await OutputReceived(buffer, bytesRead);
                     }

@@ -15,10 +15,10 @@ namespace TidyHPC.Terminal.Windows
         /// <summary>
         /// Start and configure a process. The return value represents the process and should be disposed.
         /// </summary>
-        internal static Process Start(string command, IntPtr attributes, IntPtr hPC)
+        internal static Process Start(string command, IntPtr attributes, IntPtr hPC, string? workingDirectory)
         {
             var startupInfo = ConfigureProcessThread(hPC, attributes);
-            var processInfo = RunProcess(ref startupInfo, command);
+            var processInfo = RunProcess(ref startupInfo, command, workingDirectory);
             return new Process(startupInfo, processInfo);
         }
 
@@ -70,7 +70,7 @@ namespace TidyHPC.Terminal.Windows
             return startupInfo;
         }
 
-        private static PROCESS_INFORMATION RunProcess(ref STARTUPINFOEX sInfoEx, string commandLine)
+        private static PROCESS_INFORMATION RunProcess(ref STARTUPINFOEX sInfoEx, string commandLine,string? workingDirectory)
         {
             int securityAttributeSize = Marshal.SizeOf<SECURITY_ATTRIBUTES>();
             var pSec = new SECURITY_ATTRIBUTES { nLength = securityAttributeSize };
@@ -83,7 +83,7 @@ namespace TidyHPC.Terminal.Windows
                 bInheritHandles: false,
                 dwCreationFlags: EXTENDED_STARTUPINFO_PRESENT,
                 lpEnvironment: IntPtr.Zero,
-                lpCurrentDirectory: null,
+                lpCurrentDirectory: workingDirectory,
                 lpStartupInfo: ref sInfoEx,
                 lpProcessInformation: out PROCESS_INFORMATION pInfo
             );
