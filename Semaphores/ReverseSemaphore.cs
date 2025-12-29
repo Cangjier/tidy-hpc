@@ -3,11 +3,25 @@
 /// <summary>
 /// 反向信号量
 /// </summary>
-public class ReverseSemaphore
+public class ReverseSemaphore : IDisposable
 {
     private int _count = 0;
     private readonly object _lock = new object();
     private TaskCompletionSource<bool> _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>
+    /// 信号量数量
+    /// </summary>
+    public int Count
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _count;
+            }
+        }
+    }
 
     /// <summary>
     /// 增加信号量
@@ -58,4 +72,16 @@ public class ReverseSemaphore
             return _tcs.Task;
         }
     }
+
+    /// <summary>
+    /// 释放资源
+    /// </summary>
+    public void Dispose()
+    {
+        lock (_lock)
+        {
+            _tcs.TrySetCanceled();
+        }
+    }
+
 }
