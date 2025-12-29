@@ -24,9 +24,7 @@ public class MultiplyTaskProcessorQueue<TKey, TValue>
         OnDequeue = onDequeue;
         ProcessorVisitor = new ProcessorVisitor<TValue>(processorCount, processor);
     }
-
-
-
+    
     private class TaskQueueItem(TKey key, ProcessorVisitor<TValue> processorVisitor, Action<TaskQueueItem> onTaskComplete)
     {
         public TKey Key { get; } = key;
@@ -49,10 +47,40 @@ public class MultiplyTaskProcessorQueue<TKey, TValue>
 
         private bool IsReleased { get; set; } = false;
 
+
+        private SemaphoreSlim? ConcurrentSemaphore { get; set; } = null;
+
+        private int Concurrent { get; set; } = 0;
+
         /// <summary>
-        /// 是否同步处理队列
+        /// 设置并发数量
         /// </summary>
-        public bool IsSyncProcessQueue { get; set; } = false;
+        /// <param name="concurrent"></param>
+        public void SetConcurrent(int concurrent)
+        {
+            if (ConcurrentSemaphore == null)
+            {
+                ConcurrentSemaphore = new SemaphoreSlim(concurrent);
+                Concurrent = concurrent;
+            }
+            else if (Concurrent != concurrent)
+            {
+                if (concurrent > Concurrent)
+                {
+                    ConcurrentSemaphore.Release(concurrent - Concurrent);
+                }
+                else
+                {
+                    for (int i = 0; i < Concurrent - concurrent; i++)
+                    {
+                        _ = ConcurrentSemaphore.WaitAsync();
+                    }
+                }
+                Concurrent = concurrent;
+            }
+
+        }
+
 
         /// <summary>
         /// 释放资源
@@ -63,6 +91,14 @@ public class MultiplyTaskProcessorQueue<TKey, TValue>
             IsReleased = true;
             Cancellation.Dispose();
             await TaskQueue.ReleaseResources();
+            ProcessorVisitor = null!;
+            OnTaskComplete = null!;
+            OnDequeue = null!;
+            TaskEmptySemaphore.Dispose();
+            TaskEmptySemaphore = null!;
+            ConcurrentSemaphore?.Dispose();
+            ConcurrentSemaphore = null!;
+            Concurrent = 0;
         }
 
 
@@ -93,16 +129,20 @@ public class MultiplyTaskProcessorQueue<TKey, TValue>
                     break;
                 }
                 var processor = await ProcessorVisitor.Dequeue();
-                var processTask = Task.Run(async () =>
+                if (ConcurrentSemaphore != null)
+                {
+                    await ConcurrentSemaphore.WaitAsync();
+                }
+                _ = Task.Run(async () =>
                 {
                     await processor.Process(task);
                     TaskEmptySemaphore.Decrement();
                     ProcessorVisitor.Enqueue();
                     OnTaskComplete(this);
                 });
-                if (IsSyncProcessQueue)
+                if (ConcurrentSemaphore != null)
                 {
-                    await processTask;
+                    ConcurrentSemaphore.Release();
                 }
             }
         }
@@ -187,6 +227,16 @@ public class MultiplyTaskProcessorQueue<TKey, TValue>
     public void SetOnTaskDequeue(TKey key, Func<TValue?, Task>? onTaskDequeue)
     {
         GetTaskQueueItem(key).OnDequeue = onTaskDequeue;
+    }
+
+    /// <summary>
+    /// 设置并发数量
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="concurrent"></param>
+    public void SetConcurrent(TKey key, int concurrent)
+    {
+        GetTaskQueueItem(key).SetConcurrent(concurrent);
     }
 
     /// <summary>
