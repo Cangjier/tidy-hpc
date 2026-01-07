@@ -364,6 +364,7 @@ public class UrlRouter
                 Logger.Error("Url is null");
             }
         }
+        Logger.Info("UrlRouter Listen stopped");
     }
 
     /// <summary>
