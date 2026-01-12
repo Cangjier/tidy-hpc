@@ -236,6 +236,37 @@ public class Logger
         => LoggerFile.Develop(message, exception);
 
     /// <summary>
+    /// Warn
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="exception"></param>
+    public static void Warn(string message, Exception? exception = null)
+        => LoggerFile.Warn(message, exception);
+
+    /// <summary>
+    /// Warn linear
+    /// </summary>
+    public static void WarnLinear()
+        => LoggerFile.WarnLinear();
+
+    /// <summary>
+    /// Warn linear
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="exception"></param>
+    public static void WarnLinear(string message, Exception? exception = null)
+        => LoggerFile.WarnLinear(message, exception);
+
+    /// <summary>
+    /// Warn parameter
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    /// <param name="exception"></param>
+    public static void WarnParameter(string key, string value, Exception? exception = null)
+        => LoggerFile.WarnParameter(key, value, exception);
+
+    /// <summary>
     /// Develop linear
     /// </summary>
     public static void DevelopLinear()
