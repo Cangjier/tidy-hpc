@@ -66,7 +66,7 @@ public class UrlFilter(UrlRouter urlRouter)
         var tempOrders = Orders;
         if (HotFilterMap.TryGetValue(url, out var hotMap))
         {
-            foreach(var order in tempOrders)
+            foreach (var order in tempOrders)
             {
                 if (hotMap.TryGetValue(order, out var layer))
                 {
@@ -90,15 +90,15 @@ public class UrlFilter(UrlRouter urlRouter)
         {
             if (HotNoFilterUrls.Contains(url))
             {
-                return  UrlFilterStatus.Released;
+                return UrlFilterStatus.Released;
             }
             hotMap = new();
             HotFilterMap.TryAdd(url, hotMap);
             bool matched = false;
-            foreach(var order in tempOrders)
+            foreach (var order in tempOrders)
             {
                 var layer = RealFilterMap[order];
-                foreach(var filter in layer.Filters)
+                foreach (var filter in layer.Filters)
                 {
                     var matchResult = filter.Regex.Match(url);
                     if (matchResult.Success)
@@ -106,13 +106,13 @@ public class UrlFilter(UrlRouter urlRouter)
                         matched = true;
                         session.Cache.SetUrlRegexMatchGroups(matchResult.Groups);
                         HotUrlRegexMatchGroups.TryAdd($"{url}:{filter.Pattern}", session.Cache.UrlRegexMatchGroups!);
-                        if(hotMap.TryGetValue(order, out var hotLayer) == false)
+                        if (hotMap.TryGetValue(order, out var hotLayer) == false)
                         {
                             hotLayer = new(new());
                             hotMap.TryAdd(order, hotLayer);
                         }
                         hotLayer.Filters.Add(filter);
-                        if(session.Cache.FilterStatus == UrlFilterStatus.Released)
+                        if (session.Cache.FilterStatus == UrlFilterStatus.Released)
                         {
                             await filter.Handler(session);
                         }
@@ -170,28 +170,50 @@ public class UrlFilter(UrlRouter urlRouter)
             taskResultType = genericTypeArguments[0];
             taskResultProperty = method.ReturnType.GetProperty("Result");
         }
-        var sendError = (Session session, Action<NetMessageInterface> onMessage) =>
+        var sendError = async (Session session, Action<NetMessageInterface> onMessage) =>
         {
             session.Cache.FilterStatus = UrlFilterStatus.Rejected;
-            session.Complete(() =>
+            await session.Complete(async () =>
             {
-                session.Response.Headers.ContentEncoding = "br";
+                session.Response.Headers.ContentEncoding = UrlResponse.DefaultContentEncoding;
                 session.Response.Headers.ContentType = new Headers.ContentType()
                 {
                     MediaType = "application/json"
                 };
                 using NetMessageInterface resultJson = NetMessageInterface.New();
-                using BrotliStream brotliStream = new(session.Response.Body, CompressionMode.Compress);
                 onMessage(resultJson);
-                try
+                if (session.IsWebSocket)
                 {
-                    resultJson.Target.WriteTo(brotliStream);
+                    if (session.WebSocketResponse != null)
+                    {
+                        await session.WebSocketResponse.SendMessage(resultJson.Target.ToString());
+                    }
                 }
-                catch
+                else
                 {
-                    throw;
+
+                    if (UrlResponse.DefaultContentEncoding == "br")
+                    {
+                        using BrotliStream brotliStream = new(session.Response.Body, CompressionMode.Compress);
+                        resultJson.Target.WriteTo(brotliStream);
+                    }
+                    else if (UrlResponse.DefaultContentEncoding == "gzip")
+                    {
+                        using GZipStream gzipStream = new(session.Response.Body, CompressionMode.Compress);
+                        resultJson.Target.WriteTo(gzipStream);
+                    }
+                    else if (UrlResponse.DefaultContentEncoding == "deflate")
+                    {
+                        using DeflateStream deflateStream = new(session.Response.Body, CompressionMode.Compress);
+                        resultJson.Target.WriteTo(deflateStream);
+                    }
+                    else
+                    {
+                        resultJson.Target.WriteTo(session.Response.Body);
+                    }
                 }
             });
+
         };
         if (RealFilterMap.TryGetValue(order, out var record) == false)
         {
@@ -211,12 +233,12 @@ public class UrlFilter(UrlRouter urlRouter)
             }
             catch (Exception e)
             {
-                sendError(session, msg => msg.Error(-1, "解析请求体时发生异常", e));
+                await sendError(session, msg => msg.Error(-1, "解析请求体时发生异常", e));
                 return;
             }
             if (urlMethod != null && urlMethod.Method != session.Request.Method)
             {
-                sendError(session, msg => msg.Error(-1, $"请求方法不匹配,预期方法为{urlMethod.Method},实际方法为{session.Request.Method}"));
+                await sendError(session, msg => msg.Error(-1, $"请求方法不匹配,预期方法为{urlMethod.Method},实际方法为{session.Request.Method}"));
                 return;
             }
             var instance = onInstance();
@@ -272,7 +294,7 @@ public class UrlFilter(UrlRouter urlRouter)
             }
             catch (Exception e)
             {
-                sendError(session, msg => msg.Error(-1, e.Message, e));
+                await sendError(session, msg => msg.Error(-1, e.Message, e));
                 return;
             }
 
@@ -282,15 +304,27 @@ public class UrlFilter(UrlRouter urlRouter)
                 result = method.Invoke(instance, arguments);
                 if (result is Task resultTask) await resultTask;
             }
+            catch (TargetInvocationException targetInvocationException)
+            {
+                await sendError(session, mes => mes.Error(-1, targetInvocationException.InnerException?.Message ?? "", targetInvocationException.InnerException));
+                return;
+            }
+            catch (AggregateException aggregateException)
+            {
+                await sendError(session, mes => mes.Error(-1,
+                    aggregateException.InnerExceptions?.FirstOrDefault()?.Message ?? "",
+                    aggregateException.InnerExceptions?.FirstOrDefault()));
+                return;
+            }
             catch (Exception e)
             {
-                sendError(session, msg => msg.Error(-1, e.Message, e));
+                await sendError(session, msg => msg.Error(-1, e.Message, e));
                 return;
             }
             if (taskResultProperty != null)
             {
                 var resultValue = taskResultProperty.GetValue(result);
-                if(resultValue is FilterResult filterResult)
+                if (resultValue is FilterResult filterResult)
                 {
                     session.Cache.FilterStatus = filterResult.Status;
                 }
@@ -313,7 +347,7 @@ public class UrlFilter(UrlRouter urlRouter)
     /// <param name="method"></param>
     public void Register(int order, string[] urlPatterns, MethodInfo method, Func<object?> onInstance)
     {
-        Register(order,method, () =>
+        Register(order, method, () =>
         {
             var urlPattern = $"{string.Join('|', urlPatterns)}";
             return urlPattern;
@@ -328,9 +362,9 @@ public class UrlFilter(UrlRouter urlRouter)
     /// <param name="func"></param>
     public void Register(int order, string[] urlPatterns, Func<Task<FilterResult>> func)
     {
-        Register(order,urlPatterns, func.Method, () => func.Target);
+        Register(order, urlPatterns, func.Method, () => func.Target);
     }
-    
+
     /// <summary>
     /// 通过方法反射注册过滤器
     /// </summary>
@@ -340,7 +374,7 @@ public class UrlFilter(UrlRouter urlRouter)
     /// <param name="func"></param>
     public void Register<T>(int order, string[] urlPatterns, Func<T, Task<FilterResult>> func)
     {
-        Register(order,urlPatterns, func.Method, () => func.Target);
+        Register(order, urlPatterns, func.Method, () => func.Target);
     }
 
     /// <summary>
@@ -353,7 +387,7 @@ public class UrlFilter(UrlRouter urlRouter)
     /// <param name="func"></param>
     public void Register<T1, T2>(int order, string[] urlPatterns, Func<T1, T2, Task<FilterResult>> func)
     {
-        Register(order,urlPatterns, func.Method, () => func.Target);
+        Register(order, urlPatterns, func.Method, () => func.Target);
     }
 
     /// <summary>
@@ -367,7 +401,7 @@ public class UrlFilter(UrlRouter urlRouter)
     /// <param name="func"></param>
     public void Register<T1, T2, T3>(int order, string[] urlPatterns, Func<T1, T2, T3, Task<FilterResult>> func)
     {
-        Register(order,urlPatterns, func.Method, () => func.Target);
+        Register(order, urlPatterns, func.Method, () => func.Target);
     }
 
     /// <summary>
@@ -382,7 +416,7 @@ public class UrlFilter(UrlRouter urlRouter)
     /// <param name="func"></param>
     public void Register<T1, T2, T3, T4>(int order, string[] urlPatterns, Func<T1, T2, T3, T4, Task<FilterResult>> func)
     {
-        Register(order,urlPatterns, func.Method, () => func.Target);
+        Register(order, urlPatterns, func.Method, () => func.Target);
     }
 
     /// <summary>
@@ -398,7 +432,7 @@ public class UrlFilter(UrlRouter urlRouter)
     /// <param name="func"></param>
     public void Register<T1, T2, T3, T4, T5>(int order, string[] urlPatterns, Func<T1, T2, T3, T4, T5, Task<FilterResult>> func)
     {
-        Register(order,urlPatterns, func.Method, () => func.Target);
+        Register(order, urlPatterns, func.Method, () => func.Target);
     }
 
     /// <summary>
@@ -415,6 +449,6 @@ public class UrlFilter(UrlRouter urlRouter)
     /// <param name="func"></param>
     public void Register<T1, T2, T3, T4, T5, T6>(int order, string[] urlPatterns, Func<T1, T2, T3, T4, T5, T6, Task<FilterResult>> func)
     {
-        Register(order,urlPatterns, func.Method, () => func.Target);
+        Register(order, urlPatterns, func.Method, () => func.Target);
     }
 }
