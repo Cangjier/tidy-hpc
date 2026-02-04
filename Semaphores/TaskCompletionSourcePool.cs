@@ -20,24 +20,18 @@ public class TaskCompletionSourcePool<TKey, TValue>
     /// <param name="timeout"></param>
     public async Task<TValue> WaitAsync(TKey id,TimeSpan timeout)
     {
-        return await Add(id, timeout).Task;
+        return await Add(id).Task.WaitAsync(timeout);
     }
 
     /// <summary>
     /// 添加一个待完成的任务
     /// </summary>
     /// <param name="id"></param>
-    /// <param name="timeout"></param>
     /// <returns></returns>
-    public TaskCompletionSource<TValue> Add(TKey id,TimeSpan timeout)
+    public TaskCompletionSource<TValue> Add(TKey id)
     {
         var completionSource = new TaskCompletionSource<TValue>();
         TaskCompletionSources.TryAdd(id, completionSource);
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(timeout);
-            Cancel(id);
-        });
         return completionSource;
     }
 
