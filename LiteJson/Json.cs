@@ -18,7 +18,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <param name="node"></param>
     public Json(object? node)
     {
-        if(node is Json json)
+        if (node is Json json)
         {
             Node = json.Node;
         }
@@ -57,8 +57,8 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
             || Node is float || Node is double || Node is decimal) return JsonValueKind.Number;
         else if (Node is true) return JsonValueKind.True;
         else if (Node is false) return JsonValueKind.False;
-        
-        
+
+
         return JsonValueKind.Object;
     }
 
@@ -68,7 +68,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <returns></returns>
     public static Json NewObject()
     {
-        return new(new Dictionary<string,object?>());
+        return new(new Dictionary<string, object?>());
     }
 
     /// <summary>
@@ -95,15 +95,15 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <returns></returns>
     public Json Clone()
     {
-        if(Node is JsonNode jsonNode)
+        if (Node is JsonNode jsonNode)
         {
             return jsonNode.DeepClone();
         }
-        else if(Node is List<object?> listObject)
+        else if (Node is List<object?> listObject)
         {
             return new List<object?>(listObject);
         }
-        else if(Node is Dictionary<string,object?> dictionary)
+        else if (Node is Dictionary<string, object?> dictionary)
         {
             return new Dictionary<string, object?>(dictionary);
         }
@@ -126,15 +126,15 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
         {
             jsonArray.Clear();
         }
-        else if(Node is IDictionary dictionary)
+        else if (Node is IDictionary dictionary)
         {
             dictionary.Clear();
         }
-        else if(Node is IList list)
+        else if (Node is IList list)
         {
             list.Clear();
         }
-        else if(Node is Array)
+        else if (Node is Array)
         {
             throw new NotImplementedException();
         }
@@ -189,7 +189,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
 #endif
         Encoder = JavaScriptEncoder,
         WriteIndented = false,
-        Converters = { new UnsupportedConverter()}
+        Converters = { new UnsupportedConverter() }
     };
 
     private static JsonSerializerOptions JsonDeserializerOptions { get; } = new()
@@ -305,7 +305,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <param name="stream"></param>
     /// <param name="result"></param>
     /// <returns></returns>
-    public static async Task<bool> TryParseAsync(Stream stream,Ref<Json> result)
+    public static async Task<bool> TryParseAsync(Stream stream, Ref<Json> result)
     {
         try
         {
@@ -346,75 +346,11 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <returns></returns>
     public static string Repair(string raw)
     {
-        // 修复场景
-        // 1. {"value":"他说："xxxx""}
-        bool isInString = false;
-        List<int> quoteIndices = [];
-        void enqueueQuoteIndex(int index)
-        {
-            if (quoteIndices.Count >= 10)
-            {
-                quoteIndices.RemoveAt(0);
-            }
-            quoteIndices.Add(index);
-        }
-        char[] jsonFormatChars = ['{', '}', '[', ']', ':', ',', ' ', '\t', '\r', '\n'];
-        for(int charIndex = 0;charIndex<raw.Length;charIndex++)
-        {
-            var c = raw[charIndex];
-            if (c == '"')
-            {
-                if (isInString)
-                {
-                    if(charIndex > 0 && raw[charIndex - 1] == '\\')
-                    {
-                        // 转义引号
-                    }
-                    else
-                    {
-                        // 结束引号
-                        isInString = false;
-                        enqueueQuoteIndex(charIndex);
-                    }
-                }
-                else
-                {
-                    // 开始引号
-                    isInString = true;
-                    enqueueQuoteIndex(charIndex);
-                }
-            }
-            else if (isInString == false)
-            {
-                if(jsonFormatChars.Contains(c) == false)
-                {
-                    // 非法字符
-                    if (quoteIndices.Count > 0)
-                    {
-                        var lastQuoteIndex = quoteIndices.Last();
-                        raw = raw.Insert(lastQuoteIndex, "\\");
-                        charIndex++;
-                        quoteIndices.Clear();
-                        // 寻找下一个引号
-                        while (true)
-                        {
-                            charIndex++;
-                            if (charIndex >= raw.Length) break;
-                            if (raw[charIndex] == '"')
-                            {
-                                raw = raw.Insert(charIndex, "\\");
-                                charIndex++;
-                                isInString = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        raw = JsonRepair.RepairQuote(raw);
+        raw = JsonRepair.RepairIndent(raw);
         return raw;
     }
-
+    
     /// <summary>
     /// Load Json from file until timeout
     /// </summary>
@@ -468,7 +404,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <returns></returns>
     public static Json TryLoad(string? path, Func<Json> onDefaultValue)
     {
-        if(string.IsNullOrEmpty(path))
+        if (string.IsNullOrEmpty(path))
         {
             return onDefaultValue();
         }
@@ -683,7 +619,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     public IEnumerable<KeyValuePair<string, Json>> GetObjectEnumerable()
     {
         AssertObject();
-        foreach(var item in AsObject)
+        foreach (var item in AsObject)
         {
             yield return new KeyValuePair<string, Json>(item.Key, new Json(item.Value));
         }
@@ -799,11 +735,11 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// Foreach KeyValuePair
     /// </summary>
     /// <param name="onKeyValuePair"></param>
-    public void ForeachObject(Action<string,Json> onKeyValuePair)
+    public void ForeachObject(Action<string, Json> onKeyValuePair)
     {
         foreach (var item in GetObjectEnumerable())
         {
-            onKeyValuePair(item.Key,item.Value);
+            onKeyValuePair(item.Key, item.Value);
         }
     }
 
@@ -812,18 +748,18 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <inheritdoc/>
     public bool Equals(Json other)
     {
-        if(Node == null && other.Node == null)
+        if (Node == null && other.Node == null)
         {
             return true;
         }
-        if(Node == null || other.Node == null)
+        if (Node == null || other.Node == null)
         {
             return false;
         }
         var valueKind = GetValueKind();
         if (valueKind == other.GetValueKind())
         {
-            if(Node is JsonNode jsonNode && other.Node is JsonNode otherJsonNode)
+            if (Node is JsonNode jsonNode && other.Node is JsonNode otherJsonNode)
             {
 #if NET6_0
                 return JsonExtensions.DeepEquals(jsonNode, otherJsonNode);
@@ -831,11 +767,11 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
                 return JsonNode.DeepEquals(jsonNode, otherJsonNode);
 #endif
             }
-            else if(valueKind == JsonValueKind.String)
+            else if (valueKind == JsonValueKind.String)
             {
                 return AsString == other.AsString;
             }
-            else if(valueKind == JsonValueKind.Number)
+            else if (valueKind == JsonValueKind.Number)
             {
                 return AsNumber == other.AsNumber;
             }
