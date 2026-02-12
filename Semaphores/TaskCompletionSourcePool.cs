@@ -18,7 +18,7 @@ public class TaskCompletionSourcePool<TKey, TValue>
     /// </summary>
     /// <param name="id"></param>
     /// <param name="timeout"></param>
-    public async Task<TValue> WaitAsync(TKey id,TimeSpan timeout)
+    public async Task<TValue> WaitAsync(TKey id, TimeSpan timeout)
     {
         return await Add(id).Task.WaitAsync(timeout);
     }
@@ -56,10 +56,14 @@ public class TaskCompletionSourcePool<TKey, TValue>
     {
         if (TaskCompletionSources.TryRemove(id, out var taskCompletionSource))
         {
-            if (taskCompletionSource.TrySetResult(result)==false)
+            if (taskCompletionSource.TrySetResult(result) == false)
             {
                 Logger.Error("TaskCompletionSourcePool Complete Error");
             }
+        }
+        else
+        {
+            Logger.Error($"Task {id} not found");
         }
     }
 
