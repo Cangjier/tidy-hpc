@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Threading;
 
+namespace TidyHPC.Locks;
+
 /// <summary>
 /// 基于Key的锁
 /// </summary>
