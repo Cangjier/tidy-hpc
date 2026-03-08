@@ -59,4 +59,26 @@ public readonly struct JsonPath : IEnumerable<JsonIndex>
             return new JsonPath(target);
         }
     }
+
+    /// <summary>
+    /// 转换为Json
+    /// </summary>
+    /// <returns></returns>
+    public Json ToJson()
+    {
+        Json result = Json.NewArray();
+        foreach (var index in Target)
+        {
+            if (index.Key != null)
+            {
+                result.Add(index.Key);
+            }
+            else if (index.Index != null)
+            {
+                result.Add(index.Index.Value);
+            }
+        }
+        return result;
+
+    }
 }
