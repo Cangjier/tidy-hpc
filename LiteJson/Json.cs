@@ -57,8 +57,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
             || Node is float || Node is double || Node is decimal) return JsonValueKind.Number;
         else if (Node is true) return JsonValueKind.True;
         else if (Node is false) return JsonValueKind.False;
-
-
+        else if (Node.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>))) return JsonValueKind.Array;
         return JsonValueKind.Object;
     }
 
@@ -166,6 +165,10 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
             else if (Node is IList list) return list.Count;
             else if (Node is Array array) return array.Length;
             else if (Node is string stringValue) return stringValue.Length;
+            else if (Node.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>)))
+            {
+                return Node.GetType().GetProperty("Count")?.GetValue(Node) as int? ?? 0;
+            }
             else return 0;
         }
     }
@@ -350,7 +353,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
         raw = JsonRepair.RepairIndent(raw);
         return raw;
     }
-    
+
     /// <summary>
     /// Load Json from file until timeout
     /// </summary>
