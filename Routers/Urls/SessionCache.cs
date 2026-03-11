@@ -125,9 +125,9 @@ public class SessionCache(Session session) : IDisposable
     public UrlFilterStatus FilterStatus { get; set; } = UrlFilterStatus.Released;
 
     /// <summary>
-    /// 缓存数据，如过滤期间对权限校验时获取的用户信息
+    /// 缓存数据
     /// </summary>
-    public Dictionary<string, object?> Data { get; private set; } = new();
+    public SessionCacheData Data { get; private set; } = new();
 
     /// <summary>
     /// 释放资源
@@ -137,7 +137,7 @@ public class SessionCache(Session session) : IDisposable
         FilterStatus = UrlFilterStatus.Released;
         CachedRequestBodyJson = null;
         UrlRegexMatchGroups = null;
-        Data?.Clear();
+        Data?.Dispose();
         Data = null!;
     }
 
