@@ -1,6 +1,7 @@
 ﻿using System.Collections.Specialized;
 using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
+using TidyHPC.Loggers;
 
 namespace TidyHPC.Routers.Urls.Utils;
 
@@ -62,57 +63,91 @@ public static class Extensions
     /// <returns></returns>
     public static bool TryGet(this Json self, string[] keys, Type type, out object? value, Action onGetFailed)
     {
-        if (self.IsNull)
+        try
         {
-            value = null;
-            return false;
-        }
-        foreach (var key in keys)
-        {
-            if (self.ContainsKey(key))
+            if (self.IsNull)
             {
-                var temp = self[key];
-                if (type == typeof(Json))
+                value = null;
+                return false;
+            }
+            foreach (var key in keys)
+            {
+                if (self.ContainsKey(key))
                 {
-                    value = temp;
-                    return true;
-                }
-                else if (type == typeof(string[]))
-                {
-                    value = temp.ToArray(item => item.AsString);
-                    return true;
-                }
-                else if (type == typeof(int[]))
-                {
-                    value = temp.ToArray(item => item.ToInt32);
-                    return true;
-                }
-                else if (type == typeof(float[]))
-                {
-                    value = temp.ToArray(item => item.ToFloat);
-                    return true;
-                }
-                else if (type == typeof(double[]))
-                {
-                    value = temp.ToArray(item => item.ToDouble);
-                    return true;
-                }
-                else
-                {
-                    if (temp.ToString().TryConvertTo(type, out value))
+                    var temp = self[key];
+                    if (type == typeof(Json))
                     {
+                        value = temp;
+                        return true;
+                    }
+                    else if (type == typeof(string[]))
+                    {
+                        value = temp.ToArray(item => item.AsString);
+                        return true;
+                    }
+                    else if (type == typeof(int[]))
+                    {
+                        value = temp.ToArray(item => item.ToInt32);
+                        return true;
+                    }
+                    else if (type == typeof(float[]))
+                    {
+                        value = temp.ToArray(item => item.ToFloat);
+                        return true;
+                    }
+                    else if (type == typeof(double[]))
+                    {
+                        value = temp.ToArray(item => item.ToDouble);
+                        return true;
+                    }
+                    else if (type == typeof(int) && temp.IsInt32)
+                    {
+                        value = temp.AsInt32;
+                        return true;
+                    }
+                    else if (type == typeof(float) && temp.IsFloat)
+                    {
+                        value = temp.AsFloat;
+                        return true;
+                    }
+                    else if (type == typeof(double) && temp.IsDouble)
+                    {
+                        value = temp.AsDouble;
+                        return true;
+                    }
+                    else if (type == typeof(bool) && temp.IsBoolean)
+                    {
+                        value = temp.AsBoolean;
+                        return true;
+                    }
+                    else if (type == typeof(Guid) && temp.IsGuid)
+                    {
+                        value = temp.AsGuid;
                         return true;
                     }
                     else
                     {
-                        onGetFailed();
-                        value = null;
-                        return false;
+                        if (temp.ToString().TryConvertTo(type, out value))
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            onGetFailed();
+                            value = null;
+                            return false;
+                        }
                     }
                 }
             }
+            value = null;
+            return false;
         }
-        value = null;
-        return false;
+        catch
+        {
+            onGetFailed();
+            value = null;
+            return false;
+        }
     }
 }
