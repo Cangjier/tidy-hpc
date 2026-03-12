@@ -29,7 +29,7 @@ public record UrlRouterRecord(string Pattern, Regex Regex, Func<Session, Task> H
 /// <param name="IsOptional"></param>
 /// <param name="TypeScriptInterface"></param>
 public record UrlParameterMetaRecord(
-    ParameterInfo Parameter, 
+    ParameterInfo Parameter,
     string[] Aliases,
     bool IsOptional,
     string? TypeScriptInterface);
@@ -51,7 +51,7 @@ public record UrlReturnMetaRecord(
 /// <param name="Parameters"></param>
 /// <param name="RetunrType"></param>
 /// <param name="Target"></param>
-public record UrlDocumentRecord(string Pattern, UrlParameterMetaRecord[] Parameters, UrlReturnMetaRecord RetunrType,Delegate Target)
+public record UrlDocumentRecord(string Pattern, UrlParameterMetaRecord[] Parameters, UrlReturnMetaRecord RetunrType, Delegate Target)
 {
     /// <summary>
     /// 将 UrlDocumentRecord 转换为 Json 记录
@@ -120,7 +120,7 @@ public class UrlRouterEvents(UrlRouter urlRouter)
     /// <summary>
     /// 在处理之后触发
     /// </summary>
-    public Func<string, Session,Task>? OnAfterHandler { get; set; }
+    public Func<string, Session, Task>? OnAfterHandler { get; set; }
 
     internal async Task AfterHandler(string url, Session session)
     {
@@ -133,7 +133,7 @@ public class UrlRouterEvents(UrlRouter urlRouter)
     /// <summary>
     /// 当没有路由时触发
     /// </summary>
-    public Func<string,Session,Task>? HandleNoRoute { get; set; }
+    public Func<string, Session, Task>? HandleNoRoute { get; set; }
 
     internal async Task NoRoute(string url, Session session)
     {
@@ -170,9 +170,9 @@ public class UrlRouterEvents(UrlRouter urlRouter)
     /// <summary>
     /// 在响应Json生成之前触发
     /// </summary>
-    public Func<Session,Json,Task>? OnResponseJsonGenerated { get; set; }
+    public Func<Session, Json, Task>? OnResponseJsonGenerated { get; set; }
 
-    internal async Task ResponseJsonGenerated(Session session,Json responseJson)
+    internal async Task ResponseJsonGenerated(Session session, Json responseJson)
     {
         if (OnResponseJsonGenerated != null)
         {
@@ -183,7 +183,7 @@ public class UrlRouterEvents(UrlRouter urlRouter)
     /// <summary>
     /// 当处理过程中发生异常时触发，如果HandleException被设置，则不会使用默认的异常处理逻辑
     /// </summary>
-    public Func<Session,string,Exception?,Task>? HandleException { get; set; }
+    public Func<Session, string, Exception?, Task>? HandleException { get; set; }
 
     /// <summary>
     /// 当处理过程中发生异常时触发，只要发生异常就会触发
@@ -238,7 +238,7 @@ public class UrlRouter
     /// <summary>
     /// 热更新的Url正则组，key是Url
     /// </summary>
-    internal ConcurrentDictionary<string, ImmutableDictionary<string,string>> HotUrlRegexMatchGroups { get; } = new();
+    internal ConcurrentDictionary<string, ImmutableDictionary<string, string>> HotUrlRegexMatchGroups { get; } = new();
 
     /// <summary>
     /// 文档记录，提供给文档生成器使用
@@ -261,7 +261,7 @@ public class UrlRouter
     /// <param name="url"></param>
     /// <param name="session"></param>
     /// <returns></returns>
-    public async Task Route(string url,Session session)
+    public async Task Route(string url, Session session)
     {
         if (await Filter.Filter(url, session) == UrlFilterStatus.Rejected) return;
         if (await Events.BeforeRouteAsync(url, session) == false) return;
@@ -322,7 +322,7 @@ public class UrlRouter
     {
         while (true)
         {
-            if(cancellationToken.IsCancellationRequested)
+            if (cancellationToken.IsCancellationRequested)
             {
                 break;
             }
@@ -332,11 +332,11 @@ public class UrlRouter
             {
                 if (session.Request.Url != null)
                 {
-                    if(session.Request.Url.IsAbsoluteUri) url = session.Request.Url.AbsolutePath;
+                    if (session.Request.Url.IsAbsoluteUri) url = session.Request.Url.AbsolutePath;
                     else url = session.Request.Url.OriginalString;
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.Error(e);
                 continue;
@@ -345,11 +345,11 @@ public class UrlRouter
             {
                 _ = Task.Run(async () =>
                 {
-                    try 
+                    try
                     {
                         await Route(url, session);
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Logger.Error(e);
                     }
@@ -422,10 +422,10 @@ public class UrlRouter
         Document.TryAdd(urlPattern, new UrlDocumentRecord(
             urlPattern,
             parameterMetas,
-            new UrlReturnMetaRecord (taskResultType ?? method.ReturnType, methodTypeScriptInterface),
+            new UrlReturnMetaRecord(taskResultType ?? method.ReturnType, methodTypeScriptInterface),
             onInstance
         ));
-        var sendError =async (Session session,Action<NetMessageInterface> onMessage) =>
+        var sendError = async (Session session, Action<NetMessageInterface> onMessage) =>
         {
             await session.Complete(async () =>
             {
@@ -439,7 +439,7 @@ public class UrlRouter
                 onMessage(resultJson);
                 if (session.IsWebSocket)
                 {
-                    if(session.WebSocketResponse != null)
+                    if (session.WebSocketResponse != null)
                     {
                         await session.WebSocketResponse.SendMessage(resultJson.Target.ToString());
                     }
@@ -470,7 +470,7 @@ public class UrlRouter
 
             });
         };
-        var sendErrorWrapper = async (Session session,int? code, string message,Exception? e) =>
+        var sendErrorWrapper = async (Session session, int? code, string message, Exception? e) =>
         {
             await Events.OnExceptionInvoke(session, message, e);
             if (Events.HandleException != null)
@@ -487,21 +487,21 @@ public class UrlRouter
         {
             var queryStrings = session.Request.Query;
             Json bodyJson = Json.Null;
-            
+
             try
             {
                 // 解析请求体，可能存在异常
                 bodyJson = await session.Cache.GetRequstBodyJson();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.Error(e);
-                await sendErrorWrapper(session,null, "解析请求体时发生异常", e);
+                await sendErrorWrapper(session, null, "解析请求体时发生异常", e);
                 return;
             }
             if (urlMethod != null && urlMethod.Method != session.Request.Method)
             {
-                await sendErrorWrapper(session,null, $"请求方法不匹配,预期方法为{urlMethod.Method},实际方法为{session.Request.Method}",null);
+                await sendErrorWrapper(session, null, $"请求方法不匹配,预期方法为{urlMethod.Method},实际方法为{session.Request.Method}", null);
                 return;
             }
             var instance = onInstance();
@@ -538,9 +538,9 @@ public class UrlRouter
                     {
                         arguments[i] = bodyDataValue;
                     }
-                    else if(session.Cache.TryGetUrlRegexMatchGroup(aliases,out string? urlRegexGroupValue))
+                    else if (session.Cache.TryGetUrlRegexMatchGroup(aliases, out string? urlRegexGroupValue))
                     {
-                        if(urlRegexGroupValue.TryConvertTo(parameter.ParameterType,out var urlRegexGroupValueConvert))
+                        if (urlRegexGroupValue.TryConvertTo(parameter.ParameterType, out var urlRegexGroupValueConvert))
                         {
                             arguments[i] = urlRegexGroupValueConvert;
                         }
@@ -553,22 +553,26 @@ public class UrlRouter
                     {
                         arguments[i] = parameter.DefaultValue;
                     }
+                    else if (session.Cache.Data.TryGet(parameter.ParameterType, out var parameterValue))
+                    {
+                        arguments[i] = parameterValue;
+                    }
                     else
                     {
                         if (isOptional == false) throw new Exception($"参数`{string.Join(',', aliases)}`未找到");
                     }
                 }
             }
-            catch(TargetInvocationException targetInvocationException)
+            catch (TargetInvocationException targetInvocationException)
             {
                 Logger.Error(targetInvocationException.InnerException);
                 await sendErrorWrapper(session, -1, targetInvocationException.InnerException?.Message ?? "", targetInvocationException.InnerException);
                 return;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.Error(e);
-                await sendErrorWrapper(session, -1, e.Message, e); 
+                await sendErrorWrapper(session, -1, e.Message, e);
                 return;
             }
 
@@ -772,7 +776,7 @@ public class UrlRouter
     /// <typeparam name="T1"></typeparam>
     /// <param name="urlAliases"></param>
     /// <param name="func"></param>
-    public void Register<TResult,T1>(string[] urlAliases, Func<T1,Task<TResult>> func)
+    public void Register<TResult, T1>(string[] urlAliases, Func<T1, Task<TResult>> func)
     {
         Register(urlAliases, func.Method, () => func.Target);
     }

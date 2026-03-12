@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace TidyHPC.Routers.Urls;
 
 /// <summary>
@@ -42,7 +44,7 @@ public class SessionCacheData : IDisposable
         throw new Exception($"Cache data not found: {key}");
     }
 
-        /// <summary>
+    /// <summary>
     /// 获取缓存数据，如果数据不存在则抛出异常
     /// </summary>
     /// <typeparam name="T"></typeparam>
@@ -55,6 +57,39 @@ public class SessionCacheData : IDisposable
             return t;
         }
         throw new Exception($"Cache data not found: {typeof(T)}");
+    }
+
+    /// <summary>
+    /// 尝试获取缓存数据，按类型
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    public bool TryGet<T>(out T? value)
+    {
+        if (DataByType.TryGetValue(typeof(T), out object? valueObject) && valueObject is T t)
+        {
+            value = t;
+            return true;
+        }
+        value = default;
+        return false;
+    }
+
+    /// <summary>
+    /// 尝试获取缓存数据，按类型
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    public bool TryGet(Type type, out object? value)
+    {
+        if (DataByType.TryGetValue(type, out value))
+        {
+            return true;
+        }
+        value = default;
+        return false;
     }
 
     /// <summary>
