@@ -37,7 +37,7 @@ public static class Extensions
     /// <param name="keys"></param>
     /// <param name="value"></param>
     /// <returns></returns>
-    public static bool TryGet(this IDictionary<string,string> self, string[] keys, out string value)
+    public static bool TryGet(this IDictionary<string, string> self, string[] keys, out string value)
     {
         foreach (var key in keys)
         {
@@ -75,6 +75,26 @@ public static class Extensions
                 if (type == typeof(Json))
                 {
                     value = temp;
+                    return true;
+                }
+                else if (type == typeof(string[]))
+                {
+                    value = temp.ToArray(item => item.AsString);
+                    return true;
+                }
+                else if (type == typeof(int[]))
+                {
+                    value = temp.ToArray(item => item.ToInt32);
+                    return true;
+                }
+                else if (type == typeof(float[]))
+                {
+                    value = temp.ToArray(item => item.ToFloat);
+                    return true;
+                }
+                else if (type == typeof(double[]))
+                {
+                    value = temp.ToArray(item => item.ToDouble);
                     return true;
                 }
                 else
