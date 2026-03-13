@@ -152,8 +152,9 @@ public static class Extensions
             value = null;
             return false;
         }
-        catch
+        catch(Exception e)
         {
+            Logger.Error(e);
             onGetFailed();
             value = null;
             return false;
