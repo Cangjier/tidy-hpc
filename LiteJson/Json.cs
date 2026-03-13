@@ -206,6 +206,8 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
         Converters = { new ObjectConverter() }
     };
 
+    private static JsonSerializerOptions DefaultJsonSerializerOptions { get; } = new();
+
     private readonly static JsonWriterOptions JsonWriterOptions = new()
     {
         Encoder = JavaScriptEncoder
@@ -263,6 +265,28 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     }
 
     /// <summary>
+    /// Parse string to Json
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="deserializeTypeMode"></param>
+    /// <returns></returns>
+    public static Json Parse(string value, JsonDeserializeTypeMode deserializeTypeMode)
+    {
+        if (deserializeTypeMode == JsonDeserializeTypeMode.DictionaryAndList)
+        {
+            return new(JsonSerializer.Deserialize<object>(value, JsonDeserializerOptions));
+        }
+        else if (deserializeTypeMode == JsonDeserializeTypeMode.JsonElement)
+        {
+            return JsonDocument.Parse(value).RootElement;
+        }
+        else
+        {
+            throw new ArgumentException("Invalid deserialize type mode");
+        }
+    }
+
+    /// <summary>
     /// Try Parse string to Json
     /// </summary>
     /// <param name="value"></param>
@@ -273,6 +297,27 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
         try
         {
             result = Parse(value);
+            return true;
+        }
+        catch
+        {
+            result = Null;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Try Parse string to Json
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="deserializeTypeMode"></param>
+    /// <param name="result"></param>
+    /// <returns></returns>
+    public static bool TryParse(string value, JsonDeserializeTypeMode deserializeTypeMode, out Json result)
+    {
+        try
+        {
+            result = Parse(value, deserializeTypeMode);
             return true;
         }
         catch
@@ -296,10 +341,54 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// Parse Stream to Json
     /// </summary>
     /// <param name="stream"></param>
+    /// <param name="deserializeTypeMode"></param>
+    /// <returns></returns>
+    public static Json Parse(Stream stream, JsonDeserializeTypeMode deserializeTypeMode)
+    {
+        if (deserializeTypeMode == JsonDeserializeTypeMode.DictionaryAndList)
+        {
+            return new(JsonSerializer.Deserialize<object>(stream, JsonDeserializerOptions));
+        }
+        else if (deserializeTypeMode == JsonDeserializeTypeMode.JsonElement)
+        {
+            return JsonDocument.Parse(stream).RootElement;
+        }
+        else
+        {
+            throw new ArgumentException("Invalid deserialize type mode");
+        }
+    }
+
+    /// <summary>
+    /// Parse Stream to Json
+    /// </summary>
+    /// <param name="stream"></param>
     /// <returns></returns>
     public static async Task<Json> ParseAsync(Stream stream)
     {
         return new(await JsonSerializer.DeserializeAsync<object>(stream, JsonDeserializerOptions));
+    }
+
+    /// <summary>
+    /// Parse Stream to Json
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <param name="deserializeTypeMode"></param>
+    /// <returns></returns>
+    public static async Task<Json> ParseAsync(Stream stream, JsonDeserializeTypeMode deserializeTypeMode)
+    {
+        if (deserializeTypeMode == JsonDeserializeTypeMode.DictionaryAndList)
+        {
+            return new(await JsonSerializer.DeserializeAsync<object>(stream, JsonDeserializerOptions));
+        }
+        else if (deserializeTypeMode == JsonDeserializeTypeMode.JsonElement)
+        {
+            return (await JsonDocument.ParseAsync(stream)).RootElement;
+        }
+        else
+        {
+            throw new ArgumentException("Invalid deserialize type mode");
+        }
     }
 
     /// <summary>
@@ -322,6 +411,26 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     }
 
     /// <summary>
+    /// Try Parse stream to Json
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <param name="deserializeTypeMode"></param>
+    /// <param name="result"></param>
+    /// <returns></returns>
+    public static async Task<bool> TryParseAsync(Stream stream, JsonDeserializeTypeMode deserializeTypeMode, Ref<Json> result)
+    {
+        try
+        {
+            result.Value = await ParseAsync(stream, deserializeTypeMode);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Parse bytes to Json
     /// </summary>
     /// <param name="bytes"></param>
@@ -329,6 +438,28 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     public static Json Parse(byte[] bytes)
     {
         return new(JsonSerializer.Deserialize<object>(bytes, JsonDeserializerOptions));
+    }
+
+    /// <summary>
+    /// Parse bytes to Json
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <param name="deserializeTypeMode"></param>
+    /// <returns></returns>
+    public static Json Parse(byte[] bytes, JsonDeserializeTypeMode deserializeTypeMode)
+    {
+        if (deserializeTypeMode == JsonDeserializeTypeMode.DictionaryAndList)
+        {
+            return new(JsonSerializer.Deserialize<object>(bytes, JsonDeserializerOptions));
+        }
+        else if (deserializeTypeMode == JsonDeserializeTypeMode.JsonElement)
+        {
+            return JsonDocument.Parse(bytes).RootElement;
+        }
+        else
+        {
+            throw new ArgumentException("Invalid deserialize type mode");
+        }
     }
 
     /// <summary>
@@ -340,6 +471,18 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     {
         using var fileStream = File.OpenRead(path);
         return Parse(fileStream);
+    }
+
+    /// <summary>
+    /// Load Json from file
+    /// </summary>
+    /// <param name="path"></param>
+    /// <param name="deserializeTypeMode"></param>
+    /// <returns></returns>
+    public static Json Load(string path, JsonDeserializeTypeMode deserializeTypeMode)
+    {
+        using var fileStream = File.OpenRead(path);
+        return Parse(fileStream, deserializeTypeMode);
     }
 
     /// <summary>

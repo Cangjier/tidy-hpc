@@ -88,7 +88,7 @@ public class SessionCache(Session session) : IDisposable
         {
             if (!CachedRequestBodyJson.HasValue)
             {
-                CachedRequestBodyJson = await Json.ParseAsync(Session.Request.Body);
+                CachedRequestBodyJson = await Json.ParseAsync(Session.Request.Body, JsonDeserializeTypeMode.JsonElement);
             }
             return CachedRequestBodyJson.Value;
         }

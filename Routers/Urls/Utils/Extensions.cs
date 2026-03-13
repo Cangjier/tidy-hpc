@@ -1,4 +1,5 @@
 ﻿using System.Collections.Specialized;
+using System.Text.Json;
 using TidyHPC.Extensions;
 using TidyHPC.LiteJson;
 using TidyHPC.Loggers;
@@ -125,18 +126,26 @@ public static class Extensions
                         value = temp.AsGuid;
                         return true;
                     }
+                    else if (type == typeof(DateTime) && temp.IsDateTime)
+                    {
+                        value = temp.AsDateTime;
+                        return true;
+                    }
+                    else if (type == typeof(TimeSpan) && temp.IsTimeSpan)
+                    {
+                        value = temp.AsTimeSpan;
+                        return true;
+                    }
+                    else if (temp.Node is JsonElement jsonElement)
+                    {
+                        value = jsonElement.Deserialize(type);
+                        return true;
+                    }
                     else
                     {
-                        if (temp.ToString().TryConvertTo(type, out value))
-                        {
-                            return true;
-                        }
-                        else
-                        {
-                            onGetFailed();
-                            value = null;
-                            return false;
-                        }
+                        onGetFailed();
+                        value = null;
+                        return false;
                     }
                 }
             }
