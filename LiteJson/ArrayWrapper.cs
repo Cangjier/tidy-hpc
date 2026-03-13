@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace TidyHPC.LiteJson;
@@ -26,6 +27,7 @@ public struct ArrayWrapper(object? target) : IDisposable, IEnumerable<object?>
             if (Target is Array array) return array.Length;
             if (Target is IDictionary dictionary) return dictionary.Count;
             if (Target is JsonArray jsonArray) return jsonArray.Count;
+            if (Target is JsonElement jsonElement) return jsonElement.GetArrayLength();
             if (Target.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>))) return Target.GetType().GetProperty("Count")?.GetValue(Target) as int? ?? 0;
             return 0;
         }
@@ -44,6 +46,7 @@ public struct ArrayWrapper(object? target) : IDisposable, IEnumerable<object?>
             if (Target is IList list) return list[index];
             if (Target is Array array) return array.GetValue(index);
             if (Target is JsonArray jsonArray) return jsonArray[index];
+            if (Target is JsonElement jsonElement) return jsonElement[index];
             if (Target.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>)))
                 return Target.GetType().GetProperty("Item")?.GetValue(Target, [index]);
 
@@ -147,6 +150,7 @@ public struct ArrayWrapper(object? target) : IDisposable, IEnumerable<object?>
             return false;
         }
         if (Target is JsonArray jsonArray) return jsonArray.Contains(value);
+        if (Target is JsonElement jsonElement) return jsonElement.EnumerateArray().Any(i => JsonUtil.DeepEquals(i.ToValue(), value));
         else if (Target.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>)))
             return Target.GetType().GetMethod("Contains")?.Invoke(Target, [value]) as bool? ?? false;
         return false;
@@ -249,6 +253,13 @@ public struct ArrayWrapper(object? target) : IDisposable, IEnumerable<object?>
             foreach (var item in enumerable)
             {
                 yield return item;
+            }
+        }
+        else if (Target is JsonElement jsonElement)
+        {
+            foreach (var item in jsonElement.EnumerateArray())
+            {
+                yield return item.ToValue();
             }
         }
     }
@@ -417,6 +428,15 @@ public struct ArrayWrapper(object? target) : IDisposable, IEnumerable<object?>
             }
             return result;
         }
+        else if (Target is JsonElement jsonElement)
+        {
+            List<object?> result = [];
+            for (int i = start; i < end && i < jsonElement.GetArrayLength(); i++)
+            {
+                result.Add(jsonElement[i]);
+            }
+            return result;
+        }
         else if (Target.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>)))
         {
             var countMethod = Target.GetType().GetMethod("Count") ?? throw new Exception("Error code");
@@ -529,6 +549,13 @@ public struct ArrayWrapper(object? target) : IDisposable, IEnumerable<object?>
             foreach (var item in jsonArray)
             {
                 result.Add(item);
+            }
+        }
+        else if (Target is JsonElement jsonElement)
+        {
+            foreach (var item in jsonElement.EnumerateArray())
+            {
+                result.Add(item.ToValue());
             }
         }
         else if (Target.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>)))

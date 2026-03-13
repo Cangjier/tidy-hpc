@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace TidyHPC.LiteJson;
 
@@ -139,7 +140,7 @@ public static class JsonExtensions
     /// </summary>
     /// <param name="self"></param>
     /// <param name="onValue"></param>
-    public static void EachAll(this Json self,Action<Json> onValue)
+    public static void EachAll(this Json self, Action<Json> onValue)
     {
         if (self.IsArray)
         {
@@ -150,7 +151,7 @@ public static class JsonExtensions
         }
         else if (self.IsObject)
         {
-            foreach(var item in self.GetObjectEnumerable())
+            foreach (var item in self.GetObjectEnumerable())
             {
                 EachAll(item.Value, onValue);
             }
@@ -166,7 +167,7 @@ public static class JsonExtensions
     /// </summary>
     /// <param name="self"></param>
     /// <param name="onValue"></param>
-    public static Json EachAll(this Json self,Func<Json,Json> onValue)
+    public static Json EachAll(this Json self, Func<Json, Json> onValue)
     {
         if (self.IsArray)
         {
@@ -182,7 +183,7 @@ public static class JsonExtensions
         {
             var obj = self.AsObject;
             var lst = obj.ToArray();
-            foreach(var item in lst)
+            foreach (var item in lst)
             {
                 obj[item.Key] = EachAll(new(item.Value), onValue).Node;
             }
@@ -200,7 +201,7 @@ public static class JsonExtensions
     /// <param name="self"></param>
     /// <param name="onValue"></param>
     /// <param name="selfPath"></param>
-    public static Json EachAll(this Json self,JsonPath selfPath, Func<JsonPath,Json, Json> onValue)
+    public static Json EachAll(this Json self, JsonPath selfPath, Func<JsonPath, Json, Json> onValue)
     {
         if (self.IsArray)
         {
@@ -245,7 +246,7 @@ public static class JsonExtensions
     /// <param name="self"></param>
     /// <param name="onValue"></param>
     /// <returns></returns>
-    public static async Task EachAll(this Json self,Func<Json,Task> onValue)
+    public static async Task EachAll(this Json self, Func<Json, Task> onValue)
     {
         if (self.IsArray)
         {
@@ -256,7 +257,7 @@ public static class JsonExtensions
         }
         else if (self.IsObject)
         {
-            foreach(var item in self.GetObjectEnumerable())
+            foreach (var item in self.GetObjectEnumerable())
             {
                 await EachAll(item.Value, onValue);
             }
@@ -273,7 +274,7 @@ public static class JsonExtensions
     /// <param name="self"></param>
     /// <param name="onValue"></param>
     /// <returns></returns>
-    public static async Task<Json> EachAll(this Json self,Func<Json,Task<Json>> onValue)
+    public static async Task<Json> EachAll(this Json self, Func<Json, Task<Json>> onValue)
     {
         if (self.IsArray)
         {
@@ -293,7 +294,7 @@ public static class JsonExtensions
         {
             var obj = self.AsObject;
             var lst = obj.ToArray();
-            foreach(var item in lst)
+            foreach (var item in lst)
             {
                 var value = await EachAll(new(item.Value), onValue);
                 if (value.Node != item.Value)
@@ -327,5 +328,51 @@ public static class JsonExtensions
     public static IEnumerable<JsonIndex> ToJsonIndex(this IEnumerable<int> self)
     {
         return self.Select(i => new JsonIndex(i));
+    }
+
+    /// <summary>
+    /// To Value
+    /// </summary>
+    /// <param name="self"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public static object? ToValue(this JsonElement self)
+    {
+        if (self.ValueKind == JsonValueKind.Object)
+        {
+            return self;
+        }
+        else if (self.ValueKind == JsonValueKind.Array)
+        {
+            return self;
+        }
+        else if (self.ValueKind == JsonValueKind.String)
+        {
+            return self.GetString();
+        }
+        else if (self.ValueKind == JsonValueKind.Number)
+        {
+            return self.GetDouble();
+        }
+        else if (self.ValueKind == JsonValueKind.True)
+        {
+            return true;
+        }
+        else if (self.ValueKind == JsonValueKind.False)
+        {
+            return false;
+        }
+        else if (self.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+        else if (self.ValueKind == JsonValueKind.Undefined)
+        {
+            return null;
+        }
+        else
+        {
+            throw new NotImplementedException();
+        }
     }
 }

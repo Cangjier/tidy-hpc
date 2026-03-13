@@ -49,6 +49,7 @@ public partial struct Json
             else if (Node is char nodeChar) return nodeChar.ToString();
             else if (Node is DateTime dateTime) return dateTime.ToString("O");
             else if (Node is Guid guid) return guid.ToString();
+            else if (Node is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.String) return jsonElement.GetString() ?? "";
             throw new Exception("Can't convert to string");
         }
     }
@@ -111,6 +112,7 @@ public partial struct Json
             else if (Node is ulong nodeULong) return nodeULong;
             else if (Node is string nodeString) return double.Parse(nodeString);
             else if (Node is char nodeChar) return nodeChar;
+            else if (Node is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Number) return jsonElement.GetDouble();
             else throw new Exception($"Can't convert to number, {Node?.GetType()}");
         }
     }
@@ -135,15 +137,23 @@ public partial struct Json
             if (tType == typeof(byte)) if (jsonNode.GetValueKind() == JsonValueKind.Number && jsonNode.AsValue().TryGetValue(out T? _)) return true;
             if (tType == typeof(bool)) if (jsonNode.GetValueKind() == JsonValueKind.True || jsonNode.GetValueKind() == JsonValueKind.False) return true;
             if (tType == typeof(Guid)) if (jsonNode.GetValueKind() == JsonValueKind.String && Guid.TryParse(jsonNode.GetValue<string>(), out _)) return true;
-            if(tType == typeof(DateTime)) if (jsonNode.GetValueKind() == JsonValueKind.String && DateTime.TryParse(jsonNode.GetValue<string>(), out _)) return true;
+            if (tType == typeof(DateTime)) if (jsonNode.GetValueKind() == JsonValueKind.String && DateTime.TryParse(jsonNode.GetValue<string>(), out _)) return true;
             if (tType == typeof(TimeSpan)) if (jsonNode.GetValueKind() == JsonValueKind.String && TimeSpan.TryParse(jsonNode.GetValue<string>(), out _)) return true;
         }
-        else if(Node is string nodeString)
+        else if (Node is string nodeString)
         {
-            if(tType == typeof(Guid)) if (Guid.TryParse(nodeString, out _)) return true;
+            if (tType == typeof(Guid)) if (Guid.TryParse(nodeString, out _)) return true;
             if (tType == typeof(DateTime)) if (DateTime.TryParse(nodeString, out _)) return true;
             if (tType == typeof(TimeSpan)) if (TimeSpan.TryParse(nodeString, out _)) return true;
             if (tType == typeof(Uri)) if (Uri.TryCreate(nodeString, UriKind.RelativeOrAbsolute, out _)) return true;
+        }
+        else if (Node is JsonElement jsonElement)
+        {
+            if (tType == typeof(string)) if (jsonElement.ValueKind == JsonValueKind.String) return true;
+            if (tType == typeof(int)) if (jsonElement.ValueKind == JsonValueKind.Number && jsonElement.TryGetInt32(out _)) return true;
+            if (tType == typeof(long)) if (jsonElement.ValueKind == JsonValueKind.Number && jsonElement.TryGetInt64(out _)) return true;
+            if (tType == typeof(float)) if (jsonElement.ValueKind == JsonValueKind.Number && jsonElement.TryGetSingle(out _)) return true;
+            if (tType == typeof(double)) if (jsonElement.ValueKind == JsonValueKind.Number && jsonElement.TryGetDouble(out _)) return true;
         }
         return false;
     }
@@ -176,6 +186,14 @@ public partial struct Json
             if (tType == typeof(DateTime)) return (T)(object)DateTime.Parse(nodeString);
             if (tType == typeof(TimeSpan)) return (T)(object)TimeSpan.Parse(nodeString);
             if (tType == typeof(Uri)) return (T)(object)new Uri(nodeString);
+        }
+        else if (Node is JsonElement jsonElement)
+        {
+            if (tType == typeof(string)) if (jsonElement.ValueKind == JsonValueKind.String) return (T)(object)(jsonElement.GetString() ?? "");
+            if (tType == typeof(int)) if (jsonElement.ValueKind == JsonValueKind.Number && jsonElement.TryGetInt32(out var jsonElement_Int32)) return (T)(object)jsonElement_Int32;
+            if (tType == typeof(long)) if (jsonElement.ValueKind == JsonValueKind.Number && jsonElement.TryGetInt64(out var jsonElement_Int64)) return (T)(object)jsonElement_Int64;
+            if (tType == typeof(float)) if (jsonElement.ValueKind == JsonValueKind.Number && jsonElement.TryGetSingle(out var jsonElement_Single)) return (T)(object)jsonElement_Single;
+            if (tType == typeof(double)) if (jsonElement.ValueKind == JsonValueKind.Number && jsonElement.TryGetDouble(out var jsonElement_Double)) return (T)(object)jsonElement_Double;
         }
         if (tType == typeof(int))
         {

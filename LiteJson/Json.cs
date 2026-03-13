@@ -133,7 +133,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
         {
             list.Clear();
         }
-        else if (Node is Array)
+        else
         {
             throw new NotImplementedException();
         }
@@ -230,6 +230,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
         else if (IsString) return AsString;
         else if (IsNumber) return AsNumber.ToString();
         else if (IsBoolean) return AsBoolean ? "true" : "false";
+        else if (Node is JsonElement jsonElement) return jsonElement.ToString();
         return JsonSerializer.Serialize(Node, JsonSerializerOptionsIndented);
     }
 

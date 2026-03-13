@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace TidyHPC.LiteJson;
@@ -7,7 +8,7 @@ namespace TidyHPC.LiteJson;
 /// Object Wrapper
 /// </summary>
 /// <param name="target"></param>
-public struct ObjectWrapper(object? target):IDisposable,IEnumerable<KeyValuePair<string,object?>>
+public struct ObjectWrapper(object? target) : IDisposable, IEnumerable<KeyValuePair<string, object?>>
 {
     /// <summary>
     /// The target object
@@ -28,11 +29,15 @@ public struct ObjectWrapper(object? target):IDisposable,IEnumerable<KeyValuePair
             {
                 return jsonObject[key];
             }
+            else if (Target is JsonElement jsonElement)
+            {
+                return jsonElement.GetProperty(key);
+            }
             else if (Target is IDictionary dictionary)
             {
                 return dictionary[key];
             }
-            else if(Target is null)
+            else if (Target is null)
             {
                 throw new NullReferenceException();
             }
@@ -59,7 +64,7 @@ public struct ObjectWrapper(object? target):IDisposable,IEnumerable<KeyValuePair
         }
         set
         {
-            if(value is Json json)
+            if (value is Json json)
             {
                 value = json.Node;
             }
@@ -85,12 +90,13 @@ public struct ObjectWrapper(object? target):IDisposable,IEnumerable<KeyValuePair
     {
         get
         {
-            if(Target is JsonObject jsonObject)
+            if (Target is JsonObject jsonObject)
             {
                 return jsonObject.Select(i => i.Key).ToArray();
             }
-            else if(Target is IDictionary dictionary)return dictionary.Keys.Cast<string>().ToArray();
-            else if(Target is null)throw new NullReferenceException();
+            else if (Target is IDictionary dictionary) return dictionary.Keys.Cast<string>().ToArray();
+            else if (Target is null) throw new NullReferenceException();
+            else if (Target is JsonElement jsonElement) return jsonElement.EnumerateObject().Select(i => i.Name).ToArray();
             else
             {
                 var fieldsOrProperties = Target.GetType().GetMembers().Where(i => i.MemberType == System.Reflection.MemberTypes.Field || i.MemberType == System.Reflection.MemberTypes.Property);
@@ -111,7 +117,8 @@ public struct ObjectWrapper(object? target):IDisposable,IEnumerable<KeyValuePair
                 return jsonObject.Select(i => i.Value).ToArray();
             }
             else if (Target is IDictionary dictionary) return [.. dictionary.Values];
-            else if(Target is null)throw new NullReferenceException();
+            else if (Target is null) throw new NullReferenceException();
+            else if (Target is JsonElement jsonElement) return jsonElement.EnumerateObject().Select(i => i.Value.ToValue()).ToArray();
             else
             {
                 var fieldsOrProperties = Target.GetType().GetMembers().Where(i => i.MemberType == System.Reflection.MemberTypes.Field || i.MemberType == System.Reflection.MemberTypes.Property);
@@ -154,6 +161,11 @@ public struct ObjectWrapper(object? target):IDisposable,IEnumerable<KeyValuePair
             {
                 throw new NullReferenceException();
             }
+#if NET10_0_OR_GREATER
+            else if (Target is JsonElement jsonElement) return jsonElement.GetPropertyCount();
+#else
+            else if (Target is JsonElement jsonElement) return jsonElement.EnumerateObject().Count();
+#endif
             else
             {
                 return Target.GetType().GetMembers().Where(i => i.MemberType == System.Reflection.MemberTypes.Field || i.MemberType == System.Reflection.MemberTypes.Property).Count();
@@ -177,10 +189,11 @@ public struct ObjectWrapper(object? target):IDisposable,IEnumerable<KeyValuePair
         {
             return dictionary.Contains(key);
         }
-        else if(Target is null)
+        else if (Target is null)
         {
             throw new NullReferenceException();
         }
+        else if (Target is JsonElement jsonElement) return jsonElement.TryGetProperty(key, out _);
         else
         {
             var type = Target.GetType();
@@ -278,6 +291,13 @@ public struct ObjectWrapper(object? target):IDisposable,IEnumerable<KeyValuePair
             foreach (var item in jsonObject)
             {
                 yield return new KeyValuePair<string, object?>(item.Key, item.Value);
+            }
+        }
+        else if (Target is JsonElement jsonElement)
+        {
+            foreach (var item in jsonElement.EnumerateObject())
+            {
+                yield return new KeyValuePair<string, object?>(item.Name, item.Value.ToValue());
             }
         }
         else if (Target is null) throw new NullReferenceException();
