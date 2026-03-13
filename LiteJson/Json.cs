@@ -635,6 +635,48 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     }
 
     /// <summary>
+    /// With
+    /// </summary>
+    /// <param name="onWith"></param>
+    /// <returns></returns>
+    public Json With(Action<Json> onWith)
+    {
+        onWith(this);
+        return this;
+    }
+
+    /// <summary>
+    /// With
+    /// </summary>
+    /// <param name="onWith"></param>
+    /// <returns></returns>
+    public Json With(Func<Json, Json> onWith)
+    {
+        return onWith(this);
+    }
+
+    /// <summary>
+    /// With Async
+    /// </summary>
+    /// <param name="onWithAsync"></param>
+    /// <returns></returns>
+    public async Task<Json> WithAsync(Func<Json, Task> onWithAsync)
+    {
+        await onWithAsync(this);
+        return this;
+    }
+
+    /// <summary>
+    /// With Async
+    /// </summary>
+    /// <param name="onWithAsync"></param>
+    /// <returns></returns>
+    public async Task<Json> WithAsync(Func<Json, Task<Json>> onWithAsync)
+    {
+        return await onWithAsync(this);
+    }
+
+    /// <summary>
     /// Write to Stream
     /// </summary>
     /// <param name="stream"></param>
