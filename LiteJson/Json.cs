@@ -1004,7 +1004,39 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
         return Node?.GetHashCode() ?? 0;
     }
 
+    /// <summary>
+    /// Deserialize
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public T? Deserialize<T>()
+    {
+        if (Node is JsonElement jsonElement)
+        {
+            return jsonElement.Deserialize<T>();
+        }
+        else
+        {
+            return JsonDocument.Parse(ToString(false)).RootElement.Deserialize<T>();
+        }
+    }
 
+    /// <summary>
+    /// Deserialize
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public object? Deserialize(Type type)
+    {
+        if (Node is JsonElement jsonElement)
+        {
+            return jsonElement.Deserialize(type);
+        }
+        else
+        {
+            return JsonDocument.Parse(ToString(false)).RootElement.Deserialize(type);
+        }
+    }
 
 }
 
