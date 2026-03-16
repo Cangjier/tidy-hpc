@@ -122,6 +122,19 @@ public interface IResponseHeaders : IEnumerable<KeyValuePair<string, string>>
         set => SetHeader("Content-Encoding", value);
     }
 
+    /// <summary>
+    /// Build Attachment Headers
+    /// </summary>
+    /// <param name="fileName"></param>
+    /// <param name="contentEncoding"></param>
+    public void BuildAttachmentHeaders(string fileName, string? contentEncoding = null)
+    {
+        SetHeader("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+        if (contentEncoding != null)
+        {
+            SetHeader("Content-Encoding", contentEncoding);
+        }
+    }
 
 
 }

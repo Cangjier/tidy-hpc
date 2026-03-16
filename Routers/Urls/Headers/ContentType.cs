@@ -19,6 +19,46 @@ public class ContentType
     private static Regex ParameterRegex = new(@"(?<key>.+?)=(?<value>.+?)(;|$)", RegexOptions.Compiled);
 
     /// <summary>
+    /// Application Json
+    /// </summary>
+    public static ContentType ApplicationJson = new ContentType()
+    {
+        MediaType = "application/json"
+    };
+
+    /// <summary>
+    /// Application Form Urlencoded
+    /// </summary>
+    public static ContentType ApplicationFormUrlencoded = new ContentType()
+    {
+        MediaType = "application/x-www-form-urlencoded"
+    };
+
+    /// <summary>
+    /// Multipart Form Data
+    /// </summary>
+    public static ContentType MultipartFormData = new ContentType()
+    {
+        MediaType = "multipart/form-data"
+    };
+
+    /// <summary>
+    /// Text Plain
+    /// </summary>
+    public static ContentType TextPlain = new ContentType()
+    {
+        MediaType = "text/plain"
+    };
+
+    /// <summary>
+    /// Text Html
+    /// </summary>
+    public static ContentType TextHtml = new ContentType()
+    {
+        MediaType = "text/html"
+    };
+
+    /// <summary>
     /// Boundary
     /// </summary>
     public string? Boundary { get; set; } = null;
@@ -56,7 +96,7 @@ public class ContentType
     /// <summary>
     /// Name
     /// </summary>
-    public string Name { get; set; }=string.Empty;
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Parameters
