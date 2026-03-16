@@ -81,6 +81,11 @@ public static class Extensions
                         value = temp;
                         return true;
                     }
+                    else if (temp.Node is JsonElement jsonElement)
+                    {
+                        value = jsonElement.Deserialize(type);
+                        return true;
+                    }
                     else if (type == typeof(string[]))
                     {
                         value = temp.ToArray(item => item.AsString);
@@ -134,11 +139,6 @@ public static class Extensions
                     else if (type == typeof(TimeSpan) && temp.IsTimeSpan)
                     {
                         value = temp.AsTimeSpan;
-                        return true;
-                    }
-                    else if (temp.Node is JsonElement jsonElement)
-                    {
-                        value = jsonElement.Deserialize(type);
                         return true;
                     }
                     else
