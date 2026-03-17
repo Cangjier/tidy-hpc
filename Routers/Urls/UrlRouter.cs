@@ -523,7 +523,22 @@ public class UrlRouter
                     }
                     var aliases = parameterMetas[i].Aliases;
                     var isOptional = parameterMetas[i].IsOptional;
-                    if (queryStrings.TryGet(aliases, out string queryValue))
+                    if (session.Cache.Data.TryGet(parameter.ParameterType, out var dataParameterValue))
+                    {
+                        arguments[i] = dataParameterValue;
+                    }
+                    else if (session.Cache.TryGetUrlRegexMatchGroup(aliases, out string? urlRegexGroupValue))
+                    {
+                        if (urlRegexGroupValue.TryConvertTo(parameter.ParameterType, out var urlRegexGroupValueConvert))
+                        {
+                            arguments[i] = urlRegexGroupValueConvert;
+                        }
+                        else
+                        {
+                            throw new Exception($"参数{string.Join(',', aliases)}无法转换为{parameter.ParameterType}");
+                        }
+                    }
+                    else if (queryStrings.TryGet(aliases, out string queryValue))
                     {
                         if (queryValue.TryConvertTo(parameter.ParameterType, out var parameterValue))
                         {
@@ -538,24 +553,10 @@ public class UrlRouter
                     {
                         arguments[i] = bodyDataValue;
                     }
-                    else if (session.Cache.TryGetUrlRegexMatchGroup(aliases, out string? urlRegexGroupValue))
-                    {
-                        if (urlRegexGroupValue.TryConvertTo(parameter.ParameterType, out var urlRegexGroupValueConvert))
-                        {
-                            arguments[i] = urlRegexGroupValueConvert;
-                        }
-                        else
-                        {
-                            throw new Exception($"参数{string.Join(',', aliases)}无法转换为{parameter.ParameterType}");
-                        }
-                    }
+                    
                     else if (parameter.HasDefaultValue)
                     {
                         arguments[i] = parameter.DefaultValue;
-                    }
-                    else if (session.Cache.Data.TryGet(parameter.ParameterType, out var parameterValue))
-                    {
-                        arguments[i] = parameterValue;
                     }
                     else
                     {
