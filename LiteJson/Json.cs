@@ -262,7 +262,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <returns></returns>
     public static Json Parse(string value)
     {
-        return Parse(value, JsonDeserializeTypeMode.JsonElement);
+        return Parse(value, JsonDeserializeTypeMode.DictionaryAndList);
     }
 
     /// <summary>
@@ -295,7 +295,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <returns></returns>
     public static bool TryParse(string value, out Json result)
     {
-        return TryParse(value, JsonDeserializeTypeMode.JsonElement, out result);
+        return TryParse(value, JsonDeserializeTypeMode.DictionaryAndList, out result);
     }
 
     /// <summary>
@@ -326,7 +326,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <returns></returns>
     public static Json Parse(Stream stream)
     {
-        return Parse(stream, JsonDeserializeTypeMode.JsonElement);
+        return Parse(stream, JsonDeserializeTypeMode.DictionaryAndList);
     }
 
     /// <summary>
@@ -358,7 +358,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <returns></returns>
     public static async Task<Json> ParseAsync(Stream stream)
     {
-        return await ParseAsync(stream, JsonDeserializeTypeMode.JsonElement);
+        return await ParseAsync(stream, JsonDeserializeTypeMode.DictionaryAndList);
     }
 
     /// <summary>
@@ -391,7 +391,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <returns></returns>
     public static async Task<bool> TryParseAsync(Stream stream, Ref<Json> result)
     {
-        return await TryParseAsync(stream, JsonDeserializeTypeMode.JsonElement, result);
+        return await TryParseAsync(stream, JsonDeserializeTypeMode.DictionaryAndList, result);
     }
 
     /// <summary>
@@ -421,7 +421,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <returns></returns>
     public static Json Parse(byte[] bytes)
     {
-        return Parse(bytes, JsonDeserializeTypeMode.JsonElement);
+        return Parse(bytes, JsonDeserializeTypeMode.DictionaryAndList);
     }
 
     /// <summary>
@@ -453,7 +453,7 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     /// <returns></returns>
     public static Json Load(string path)
     {
-        return Load(path, JsonDeserializeTypeMode.JsonElement);
+        return Load(path, JsonDeserializeTypeMode.DictionaryAndList);
     }
 
     /// <summary>
