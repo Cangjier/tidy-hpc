@@ -98,6 +98,28 @@ public class SessionCache(Session session) : IDisposable
         }
     }
 
+    /// <summary>
+    /// 获取请求体的Json
+    /// </summary>
+    /// <param name="jsonDeserializeTypeMode"></param>
+    /// <returns></returns>
+    public async Task<Json> GetRequstBodyJson(JsonDeserializeTypeMode jsonDeserializeTypeMode)
+    {
+        if (Session.Request.Headers.ContentType?.IsApplicationJson == true ||
+            Session.Response is IWebsocketResponse)
+        {
+            if (!CachedRequestBodyJson.HasValue)
+            {
+                CachedRequestBodyJson = await Json.ParseAsync(Session.Request.Body, jsonDeserializeTypeMode);
+            }
+            return CachedRequestBodyJson.Value;
+        }
+        else
+        {
+            return Json.Null;
+        }
+    }
+
     private string? CachedRequestBodyString { get; set; } = null;
 
     /// <summary>

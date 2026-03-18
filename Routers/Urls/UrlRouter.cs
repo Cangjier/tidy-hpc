@@ -256,6 +256,11 @@ public class UrlRouter
     public UrlRouterEvents Events { get; }
 
     /// <summary>
+    /// 请求体Json解析模式
+    /// </summary>
+    public JsonDeserializeTypeMode RequestBodyJsonDeserializeTypeMode { get; set; } = JsonDeserializeTypeMode.JsonElement;
+
+    /// <summary>
     /// 路由
     /// </summary>
     /// <param name="url"></param>
@@ -491,7 +496,7 @@ public class UrlRouter
             try
             {
                 // 解析请求体，可能存在异常
-                bodyJson = await session.Cache.GetRequstBodyJson();
+                bodyJson = await session.Cache.GetRequstBodyJson(RequestBodyJsonDeserializeTypeMode);
             }
             catch (Exception e)
             {
@@ -553,7 +558,7 @@ public class UrlRouter
                     {
                         arguments[i] = bodyDataValue;
                     }
-                    
+
                     else if (parameter.HasDefaultValue)
                     {
                         arguments[i] = parameter.DefaultValue;

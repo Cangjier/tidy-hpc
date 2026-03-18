@@ -427,6 +427,10 @@ public partial struct Json
     {
         if (toType == typeof(string) && value.IsString == false) return value.ToString();
         else if (toType == typeof(string) && value.Node is char) return value.Node.ToString();
+        else if (value.Node is JsonElement nodeJsonElement)
+        {
+            return nodeJsonElement.Deserialize(toType);
+        }
         else if (toType == typeof(bool) && value.IsString) return value.AsString == "true" ? true : false;
         else if (toType == typeof(int)) return value.ToInt32;
         else if (toType == typeof(float)) return value.ToFloat;
