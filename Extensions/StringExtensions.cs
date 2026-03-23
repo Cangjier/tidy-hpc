@@ -101,32 +101,14 @@ public static class StringExtensions
         }
     }
 
-    /// <summary>
-    /// Try convert string to object of type
-    /// </summary>
-    /// <param name="from"></param>
-    /// <param name="toType"></param>
-    /// <param name="to"></param>
-    /// <returns></returns>
-    /// <exception cref="NotSupportedException"></exception>
-    public static bool TryConvertTo(this string from,Type toType, out object? to)
+    private static bool TryConvertTo_StringToNumber(this string from, Type toType, out object? to)
     {
-        if (toType == typeof(string))
-        {
-            to = from;
-            return true;
-        }
-        else if (toType == typeof(int))
+        if (toType == typeof(int))
         {
             if (int.TryParse(from, out var result))
             {
                 to = result;
                 return true;
-            }
-            else
-            {
-                to = null;
-                return false;
             }
         }
         else if (toType == typeof(long))
@@ -136,11 +118,6 @@ public static class StringExtensions
                 to = result;
                 return true;
             }
-            else
-            {
-                to = null;
-                return false;
-            }
         }
         else if (toType == typeof(float))
         {
@@ -148,11 +125,6 @@ public static class StringExtensions
             {
                 to = result;
                 return true;
-            }
-            else
-            {
-                to = null;
-                return false;
             }
         }
         else if (toType == typeof(double))
@@ -162,10 +134,29 @@ public static class StringExtensions
                 to = result;
                 return true;
             }
-            else
+        }
+        else if (toType == typeof(sbyte))
+        {
+            if (sbyte.TryParse(from, out var result))
             {
-                to = null;
-                return false;
+                to = result;
+                return true;
+            }
+        }
+        else if (toType == typeof(short))
+        {
+            if (short.TryParse(from, out var result))
+            {
+                to = result;
+                return true;
+            }
+        }
+        else if (toType == typeof(ushort))
+        {
+            if (ushort.TryParse(from, out var result))
+            {
+                to = result;
+                return true;
             }
         }
         else if (toType == typeof(bool))
@@ -175,26 +166,43 @@ public static class StringExtensions
                 to = result;
                 return true;
             }
+            else if (from.Equals("true", StringComparison.CurrentCultureIgnoreCase))
+            {
+                to = true;
+                return true;
+            }
+            else if (from.Equals("false", StringComparison.CurrentCultureIgnoreCase))
+            {
+                to = false;
+                return true;
+            }
             else
             {
-                if (from == "true")
-                {
-                    to = true;
-                    return true;
-                }
-                else if (from == "false")
-                {
-                    to = false;
-                    return true;
-                }
-                else
-                {
-                    to = null;
-                    return false;
-                }
+                to = null;
+                return false;
             }
         }
-        else if (toType == typeof(DateTime))
+        to = null;
+        return false;
+    }
+
+    private static bool TryConvertTo_StringToBoolean(this string from, out object? to)
+    {
+        if (bool.TryParse(from, out var result))
+        {
+            to = result;
+            return true;
+        }
+        else
+        {
+            to = null;
+            return false;
+        }
+    }
+
+    private static bool TryConvertTo_StringToDate(this string from, Type toType, out object? to)
+    {
+        if (toType == typeof(DateTime))
         {
             if (DateTime.TryParse(from, out var result))
             {
@@ -207,7 +215,7 @@ public static class StringExtensions
                 return false;
             }
         }
-        else if (toType == typeof(DateTimeOffset))
+        if (toType == typeof(DateTimeOffset))
         {
             if (DateTimeOffset.TryParse(from, out var result))
             {
@@ -233,7 +241,16 @@ public static class StringExtensions
                 return false;
             }
         }
-        else if (toType == typeof(Guid))
+        else
+        {
+            to = null;
+            return false;
+        }
+    }
+
+    private static bool TryConvertTo_StringToOther(this string from, Type toType, out object? to)
+    {
+        if (toType == typeof(Guid))
         {
             if (Guid.TryParse(from, out var result))
             {
@@ -272,36 +289,78 @@ public static class StringExtensions
                 return false;
             }
         }
-        else if (toType == typeof(char))
+        else
         {
-            if (char.TryParse(from, out var result))
-            {
-                to = result;
-                return true;
-            }
-            else
-            {
-                to = null;
-                return false;
-            }
+            to = null;
+            return false;
         }
-        else if (toType == typeof(char[]))
+    }
+
+    private static bool TryConvertTo_StringToArray(this string from, Type toType, out object? to)
+    {
+        if (toType == typeof(char[]))
         {
             to = from.ToCharArray();
             return true;
         }
-        else if (toType == typeof(sbyte))
+        else
         {
-            if (sbyte.TryParse(from, out var result))
-            {
-                to = result;
-                return true;
-            }
-            else
-            {
-                to = null;
-                return false;
-            }
+            to = null;
+            return false;
+        }
+    }
+
+    private static bool TryConvertTo_StringToEnum(this string from, Type toType, out object? to)
+    {
+        if (toType.IsEnum)
+        {
+            return Enum.TryParse(toType, from, out to);
+        }
+        else
+        {
+            to = null;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Try convert string to object of type
+    /// </summary>
+    /// <param name="from"></param>
+    /// <param name="toType"></param>
+    /// <param name="to"></param>
+    /// <returns></returns>
+    /// <exception cref="NotSupportedException"></exception>
+    public static bool TryConvertTo(this string from, Type toType, out object? to)
+    {
+        if (toType == typeof(string))
+        {
+            to = from;
+            return true;
+        }
+        else if (TryConvertTo_StringToNumber(from, toType, out to))
+        {
+            return true;
+        }
+        else if (TryConvertTo_StringToBoolean(from, out to))
+        {
+            return true;
+        }
+        else if (TryConvertTo_StringToDate(from, toType, out to))
+        {
+            return true;
+        }
+        else if (TryConvertTo_StringToArray(from, toType, out to))
+        {
+            return true;
+        }
+        else if (TryConvertTo_StringToOther(from, toType, out to))
+        {
+            return true;
+        }
+        else if (TryConvertTo_StringToEnum(from, toType, out to))
+        {
+            return true;
         }
         else
         {
