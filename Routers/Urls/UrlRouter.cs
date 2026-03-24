@@ -491,21 +491,9 @@ public class UrlRouter
         RealMap.TryAdd(urlPattern, new UrlRouterRecord(urlPattern, urlRegex, async session =>
         {
             var queryStrings = session.Request.Query;
-            // Json bodyJson = Json.Null;
-            // try
-            // {
-            //     // 解析请求体，可能存在异常
-            //     bodyJson = await session.Cache.GetRequstBodyJson(RequestBodyJsonDeserializeTypeMode);
-            // }
-            // catch (Exception e)
-            // {
-            //     Logger.Error(e);
-            //     await sendErrorWrapper(session, null, "解析请求体时发生异常", e);
-            //     return;
-            // }
             if (urlMethod != null && urlMethod.Method != session.Request.Method)
             {
-                await sendErrorWrapper(session, null, $"请求方法不匹配,预期方法为{urlMethod.Method},实际方法为{session.Request.Method}", null);
+                await sendErrorWrapper(session, null, $"Request method does not match, expected method is {urlMethod.Method}, actual method is {session.Request.Method}", null);
                 return;
             }
             var instance = onInstance();
@@ -556,8 +544,8 @@ public class UrlRouter
                     else if ((await session.Cache.GetRequstBodyJson(RequestBodyJsonDeserializeTypeMode, e =>
                     {
                         Logger.Error(e);
-                        throw new Exception("解析请求体时发生异常", e);
-                    })).TryGet(aliases, parameter.ParameterType, out var bodyDataValue, () => throw new Exception($"参数{string.Join(',', aliases)}无法转换为{parameter.ParameterType}")))
+                        throw new Exception("Failed to parse request body", e);
+                    })).TryGet(aliases, parameter.ParameterType, out var bodyDataValue, () => throw new Exception($"Parameter {string.Join(',', aliases)} cannot be converted to {parameter.ParameterType}")))
                     {
                         arguments[i] = bodyDataValue;
                     }
@@ -568,7 +556,7 @@ public class UrlRouter
                     }
                     else
                     {
-                        if (isOptional == false) throw new Exception($"参数`{string.Join(',', aliases)}`未找到");
+                        if (isOptional == false) throw new Exception($"Parameter `{string.Join(',', aliases)}` not found");
                     }
                 }
             }
