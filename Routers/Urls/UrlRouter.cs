@@ -491,19 +491,18 @@ public class UrlRouter
         RealMap.TryAdd(urlPattern, new UrlRouterRecord(urlPattern, urlRegex, async session =>
         {
             var queryStrings = session.Request.Query;
-            Json bodyJson = Json.Null;
-
-            try
-            {
-                // 解析请求体，可能存在异常
-                bodyJson = await session.Cache.GetRequstBodyJson(RequestBodyJsonDeserializeTypeMode);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e);
-                await sendErrorWrapper(session, null, "解析请求体时发生异常", e);
-                return;
-            }
+            // Json bodyJson = Json.Null;
+            // try
+            // {
+            //     // 解析请求体，可能存在异常
+            //     bodyJson = await session.Cache.GetRequstBodyJson(RequestBodyJsonDeserializeTypeMode);
+            // }
+            // catch (Exception e)
+            // {
+            //     Logger.Error(e);
+            //     await sendErrorWrapper(session, null, "解析请求体时发生异常", e);
+            //     return;
+            // }
             if (urlMethod != null && urlMethod.Method != session.Request.Method)
             {
                 await sendErrorWrapper(session, null, $"请求方法不匹配,预期方法为{urlMethod.Method},实际方法为{session.Request.Method}", null);
@@ -554,7 +553,11 @@ public class UrlRouter
                             throw new Exception($"参数{string.Join(',', aliases)}无法转换为{parameter.ParameterType}");
                         }
                     }
-                    else if (bodyJson.TryGet(aliases, parameter.ParameterType, out var bodyDataValue, () => throw new Exception($"参数{string.Join(',', aliases)}无法转换为{parameter.ParameterType}")))
+                    else if ((await session.Cache.GetRequstBodyJson(RequestBodyJsonDeserializeTypeMode, e =>
+                    {
+                        Logger.Error(e);
+                        throw new Exception("解析请求体时发生异常", e);
+                    })).TryGet(aliases, parameter.ParameterType, out var bodyDataValue, () => throw new Exception($"参数{string.Join(',', aliases)}无法转换为{parameter.ParameterType}")))
                     {
                         arguments[i] = bodyDataValue;
                     }
