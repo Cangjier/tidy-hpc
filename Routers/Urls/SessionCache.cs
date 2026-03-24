@@ -126,7 +126,7 @@ public class SessionCache(Session session) : IDisposable
     /// <param name="jsonDeserializeTypeMode"></param>
     /// <param name="exceptionHandler"></param>
     /// <returns></returns>
-    public async Task<Json> GetRequstBodyJson(JsonDeserializeTypeMode jsonDeserializeTypeMode, Func<Exception,bool> exceptionHandler)
+    public async Task<Json> GetRequstBodyJson(JsonDeserializeTypeMode jsonDeserializeTypeMode, Func<Exception,Json> exceptionHandler)
     {
         try
         {
@@ -146,14 +146,7 @@ public class SessionCache(Session session) : IDisposable
         }
         catch (Exception e)
         {
-            if (exceptionHandler(e))
-            {
-                return Json.Null;
-            }
-            else
-            {
-                throw;
-            }
+            return exceptionHandler(e);
         }
     }
 
