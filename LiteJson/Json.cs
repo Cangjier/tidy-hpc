@@ -673,6 +673,18 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
     }
 
     /// <summary>
+    /// Write to Stream async
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <returns></returns>
+    public async Task WriteToAsync(Stream stream)
+    {
+        if (Node == null) throw new Exception("Node is null");
+        await JsonSerializer.SerializeAsync(stream, Node, JsonSerializerOptions);
+        await stream.FlushAsync();
+    }
+
+    /// <summary>
     /// Assert Object
     /// </summary>
     /// <exception cref="Exception"></exception>

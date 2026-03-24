@@ -113,6 +113,22 @@ public interface IRequestHeaders : IEnumerable<KeyValuePair<string, string>>
         }
     }
 
-
+    /// <summary>
+    /// Content-Length
+    /// </summary>
+    public long ContentLength
+    {
+        get
+        {
+            string? contentLength = GetHeader("Content-Length");
+            if (contentLength == null) return 0;
+            return long.Parse(contentLength);
+        }
+        set
+        {
+            if (value == 0) return;
+            SetHeader("Content-Length", value.ToString());
+        }
+    }
 
 }
