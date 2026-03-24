@@ -224,17 +224,6 @@ public class UrlFilter(UrlRouter urlRouter)
         var handler = async (Session session) =>
         {
             var queryStrings = session.Request.Query;
-            // Json bodyJson = Json.Null;
-            // try
-            // {
-            //     // 解析请求体，可能存在异常
-            //     bodyJson = await session.Cache.GetRequstBodyJson();
-            // }
-            // catch (Exception e)
-            // {
-            //     await sendError(session, msg => msg.Error(-1, "解析请求体时发生异常", e));
-            //     return;
-            // }
             if (urlMethod != null && urlMethod.Method != session.Request.Method)
             {
                 await sendError(session, msg => msg.Error(-1, $"Request method does not match, expected method is {urlMethod.Method}, actual method is {session.Request.Method}"));
@@ -259,7 +248,22 @@ public class UrlFilter(UrlRouter urlRouter)
                     }
                     var aliases = parameterMetas[i].Aliases;
                     var isOptional = parameterMetas[i].IsOptional;
-                    if (queryStrings.TryGet(aliases, out string queryValue))
+                    if (session.Cache.Data.TryGet(parameter.ParameterType, out var dataParameterValue))
+                    {
+                        arguments[i] = dataParameterValue;
+                    }
+                    else if (session.Cache.TryGetUrlRegexMatchGroup(aliases, out string? urlRegexGroupValue))
+                    {
+                        if (urlRegexGroupValue.TryConvertTo(parameter.ParameterType, out var urlRegexGroupValueConvert))
+                        {
+                            arguments[i] = urlRegexGroupValueConvert;
+                        }
+                        else
+                        {
+                            throw new Exception($"Parameter {string.Join(',', aliases)} cannot be converted to {parameter.ParameterType}");
+                        }
+                    }
+                    else if (queryStrings.TryGet(aliases, out string queryValue))
                     {
                         if (queryValue.TryConvertTo(parameter.ParameterType, out var parameterValue))
                         {
@@ -278,16 +282,10 @@ public class UrlFilter(UrlRouter urlRouter)
                     {
                         arguments[i] = bodyDataValue;
                     }
-                    else if (session.Cache.TryGetUrlRegexMatchGroup(aliases, out string? urlRegexGroupValue))
+
+                    else if (parameter.HasDefaultValue)
                     {
-                        if (urlRegexGroupValue.TryConvertTo(parameter.ParameterType, out var urlRegexGroupValueConvert))
-                        {
-                            arguments[i] = urlRegexGroupValueConvert;
-                        }
-                        else
-                        {
-                            throw new Exception($"Parameter {string.Join(',', aliases)} cannot be converted to {parameter.ParameterType}");
-                        }
+                        arguments[i] = parameter.DefaultValue;
                     }
                     else
                     {
