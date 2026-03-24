@@ -527,7 +527,7 @@ public class UrlRouter
                         }
                         else
                         {
-                            throw new Exception($"参数{string.Join(',', aliases)}无法转换为{parameter.ParameterType}");
+                            throw new Exception($"Parameter {string.Join(',', aliases)} cannot be converted to {parameter.ParameterType}");
                         }
                     }
                     else if (queryStrings.TryGet(aliases, out string queryValue))
@@ -538,7 +538,7 @@ public class UrlRouter
                         }
                         else
                         {
-                            throw new Exception($"参数{string.Join(',', aliases)}无法转换为{parameter.ParameterType}");
+                            throw new Exception($"Parameter {string.Join(',', aliases)} cannot be converted to {parameter.ParameterType}");
                         }
                     }
                     else if ((await session.Cache.GetRequstBodyJson(RequestBodyJsonDeserializeTypeMode, e =>
