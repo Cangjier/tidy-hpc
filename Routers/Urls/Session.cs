@@ -1,4 +1,5 @@
-﻿using TidyHPC.Routers.Urls.Interfaces;
+﻿using TidyHPC.Loggers;
+using TidyHPC.Routers.Urls.Interfaces;
 
 namespace TidyHPC.Routers.Urls;
 
@@ -63,7 +64,15 @@ public class Session : IDisposable
     {
         if (Cache.Completed) return;
         Cache.Completed = true;
-        await onComplete();
+        try
+        {
+            await onComplete();
+        }
+        catch (Exception e)
+        {
+            Logger.Error("Failed to complete session", e);
+            throw;
+        }
     }
 
     /// <summary>
