@@ -60,7 +60,7 @@ public class Session : IDisposable
     /// </summary>
     /// <param name="onComplete"></param>
     /// <returns></returns>
-    public async Task Complete(Func<Task> onComplete)
+    public async Task CompleteAsync(Func<Task> onComplete)
     {
         if (Cache.Completed) return;
         Cache.Completed = true;

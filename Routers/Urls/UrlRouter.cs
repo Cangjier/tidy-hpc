@@ -432,7 +432,7 @@ public class UrlRouter
         ));
         var sendError = async (Session session, Action<NetMessageInterface> onMessage) =>
         {
-            await session.Complete(async () =>
+            await session.CompleteAsync(async () =>
             {
                 try
                 {
@@ -597,7 +597,7 @@ public class UrlRouter
                 await sendErrorWrapper(session, -1, e.Message, e);
                 return;
             }
-            await session.Complete(async () =>
+            await session.CompleteAsync(async () =>
             {
                 if (methodReturnTypeIsTask)
                 {

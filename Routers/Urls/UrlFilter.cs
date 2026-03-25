@@ -173,7 +173,7 @@ public class UrlFilter(UrlRouter urlRouter)
         var sendError = async (Session session, Action<NetMessageInterface> onMessage) =>
         {
             session.Cache.FilterStatus = UrlFilterStatus.Rejected;
-            await session.Complete(async () =>
+            await session.CompleteAsync(async () =>
             {
                 session.Response.Headers.ContentEncoding = UrlResponse.DefaultContentEncoding;
                 session.Response.Headers.ContentType = new Headers.ContentType()
