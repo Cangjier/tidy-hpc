@@ -70,7 +70,7 @@ public class Session : IDisposable
         }
         catch (Exception e)
         {
-            Logger.Error("Failed to complete session", e);
+            Logger.Error("Failed to complete async session", e);
             throw;
         }
     }
@@ -84,7 +84,14 @@ public class Session : IDisposable
     {
         if (Cache.Completed) return;
         Cache.Completed = true;
-        onComplete();
+        try {
+            onComplete();
+        }
+        catch (Exception e)
+        {
+            Logger.Error("Failed to complete session", e);
+            throw;
+        }
     }
 
     /// <summary>
