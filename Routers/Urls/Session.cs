@@ -84,7 +84,8 @@ public class Session : IDisposable
     {
         if (Cache.Completed) return;
         Cache.Completed = true;
-        try {
+        try
+        {
             onComplete();
         }
         catch (Exception e)

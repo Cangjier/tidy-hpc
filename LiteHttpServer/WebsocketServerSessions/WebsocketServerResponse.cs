@@ -30,6 +30,8 @@ internal class WebsocketServerResponse : IResponse, IWebsocketResponse
 
     public int StatusCode { get; set; }
 
+    public long? ContentLength { get; set; }
+
     public void Dispose()
     {
         Body.Dispose();

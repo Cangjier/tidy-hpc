@@ -24,6 +24,13 @@ public readonly struct HttpResponse(HttpListenerResponse Target) : IResponse
         set => Target.StatusCode = value;
     }
 
+    /// <inheritdoc/>
+    public long? ContentLength
+    {
+        get => Target.ContentLength64;
+        set => Target.ContentLength64 = value ?? 0;
+    }
+
     /// <summary>
     /// 释放资源
     /// </summary>

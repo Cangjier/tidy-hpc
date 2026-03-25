@@ -19,4 +19,9 @@ public interface IResponse:IDisposable
     /// 状态码
     /// </summary>
     int StatusCode { get; set; }
+
+    /// <summary>
+    /// 响应体长度
+    /// </summary>
+    long? ContentLength { get; set; }
 }
