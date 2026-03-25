@@ -434,43 +434,51 @@ public class UrlRouter
         {
             await session.Complete(async () =>
             {
-                session.Response.Headers.ContentEncoding = UrlResponse.DefaultContentEncoding;
-                session.Response.Headers.ContentType = new Headers.ContentType()
+                try
                 {
-                    MediaType = "application/json"
-                };
-                using NetMessageInterface resultJson = NetMessageInterface.New();
-                await Events.ResponseJsonGenerated(session, resultJson.Target);
-                onMessage(resultJson);
-                if (session.IsWebSocket)
-                {
-                    if (session.WebSocketResponse != null)
+                    session.Response.Headers.ContentEncoding = UrlResponse.DefaultContentEncoding;
+                    session.Response.Headers.ContentType = new Headers.ContentType()
                     {
-                        await session.WebSocketResponse.SendMessage(resultJson.Target.ToString());
-                    }
-                }
-                else
-                {
-
-                    if (UrlResponse.DefaultContentEncoding == "br")
+                        MediaType = "application/json"
+                    };
+                    using NetMessageInterface resultJson = NetMessageInterface.New();
+                    await Events.ResponseJsonGenerated(session, resultJson.Target);
+                    onMessage(resultJson);
+                    if (session.IsWebSocket)
                     {
-                        using BrotliStream brotliStream = new(session.Response.Body, CompressionMode.Compress);
-                        resultJson.Target.WriteTo(brotliStream);
-                    }
-                    else if (UrlResponse.DefaultContentEncoding == "gzip")
-                    {
-                        using GZipStream gzipStream = new(session.Response.Body, CompressionMode.Compress);
-                        resultJson.Target.WriteTo(gzipStream);
-                    }
-                    else if (UrlResponse.DefaultContentEncoding == "deflate")
-                    {
-                        using DeflateStream deflateStream = new(session.Response.Body, CompressionMode.Compress);
-                        resultJson.Target.WriteTo(deflateStream);
+                        if (session.WebSocketResponse != null)
+                        {
+                            await session.WebSocketResponse.SendMessage(resultJson.Target.ToString());
+                        }
                     }
                     else
                     {
-                        resultJson.Target.WriteTo(session.Response.Body);
+
+                        if (UrlResponse.DefaultContentEncoding == "br")
+                        {
+                            using BrotliStream brotliStream = new(session.Response.Body, CompressionMode.Compress);
+                            resultJson.Target.WriteTo(brotliStream);
+                        }
+                        else if (UrlResponse.DefaultContentEncoding == "gzip")
+                        {
+                            using GZipStream gzipStream = new(session.Response.Body, CompressionMode.Compress);
+                            resultJson.Target.WriteTo(gzipStream);
+                        }
+                        else if (UrlResponse.DefaultContentEncoding == "deflate")
+                        {
+                            using DeflateStream deflateStream = new(session.Response.Body, CompressionMode.Compress);
+                            resultJson.Target.WriteTo(deflateStream);
+                        }
+                        else
+                        {
+                            resultJson.Target.WriteTo(session.Response.Body);
+                        }
                     }
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e);
+                    throw new Exception("Failed to send error", e);
                 }
 
             });
