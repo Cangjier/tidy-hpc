@@ -86,6 +86,11 @@ public static class Extensions
                         value = jsonElement.Deserialize(type);
                         return true;
                     }
+                    else if (type == typeof(string))
+                    {
+                        value = temp.AsString;
+                        return true;
+                    }
                     else if (type == typeof(string[]))
                     {
                         value = temp.ToArray(item => item.AsString);
@@ -152,7 +157,7 @@ public static class Extensions
             value = null;
             return false;
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             Logger.Error(e);
             onGetFailed();
