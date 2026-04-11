@@ -1,4 +1,5 @@
 ﻿namespace TidyHPC.LiteJson;
+
 public partial struct Json
 {
     /// <summary>
@@ -204,7 +205,7 @@ public partial struct Json
         }
         throw new Exception("Invalid operation");
     }
-    
+
     /// <summary>
     /// Modulus
     /// </summary>
@@ -233,5 +234,28 @@ public partial struct Json
         if (value.IsUndefined) return true;
         if (value.IsNull) return true;
         return false;
+    }
+
+    /// <summary>
+    /// Negative
+    /// </summary>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public static Json operator -(Json value)
+    {
+        if (value.IsInt32)
+        {
+            return -value.AsInt32;
+        }
+        else if (value.IsInt64)
+        {
+            return -value.AsInt64;
+        }
+        else if(value.IsNumber)
+        {
+            return -value.AsNumber;
+        }
+        throw new Exception("Invalid operation");
     }
 }
