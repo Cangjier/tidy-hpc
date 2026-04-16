@@ -148,8 +148,13 @@ public class HttpServer : IServer
             {
                 try
                 {
+                    var prefixes = Listener.Prefixes.ToArray();
                     Listener.Stop();
                     Listener = new HttpListener();
+                    foreach (var prefix in prefixes)
+                    {
+                        Listener.Prefixes.Add(prefix);
+                    }
                     Listener.Start();
                     break;
                 }
