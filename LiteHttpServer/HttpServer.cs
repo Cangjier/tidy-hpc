@@ -21,15 +21,15 @@ public class HttpServer : IServer
     /// </summary>
     public HttpServer()
     {
-        
+
     }
 
-    private HttpListener Listener { get; } = new();
+    private HttpListener Listener { get; set; } = new();
 
     /// <summary>
     /// 监听前缀
     /// </summary>
-    public HttpListenerPrefixCollection Prefixes=> Listener.Prefixes;
+    public HttpListenerPrefixCollection Prefixes => Listener.Prefixes;
 
     /// <summary>
     /// 启动监听
@@ -53,77 +53,111 @@ public class HttpServer : IServer
 
     private async Task Loop(CancellationToken cancellationToken)
     {
-        while (EnableLoop)
+        while (EnableLoop && !cancellationToken.IsCancellationRequested)
         {
-            try
+            while (EnableLoop && !cancellationToken.IsCancellationRequested)
             {
-                HttpListenerContext context = await Listener.GetContextAsync();
-                if (context.Request.IsWebSocketRequest)
+                try
                 {
-                    _ = Task.Run(async () =>
+                    HttpListenerContext context = await Listener.GetContextAsync();
+                    try
                     {
-                        WebSocketContext websocketContext;
+                        if (context.Request.IsWebSocketRequest)
+                        {
+                            _ = Task.Run(async () =>
+                            {
+                                WebSocketContext websocketContext;
+                                try
+                                {
+                                    websocketContext = await context.AcceptWebSocketAsync(subProtocol: null);
+                                }
+                                catch (Exception e)
+                                {
+                                    Logger.Error(e);
+                                    context.Response.StatusCode = 500;
+                                    context.Response.Close();
+                                    return;
+                                }
+                                WebSocket webSocket = websocketContext.WebSocket;
+                                while (true)
+                                {
+                                    try
+                                    {
+                                        var message = await webSocket.ReceiveMessage(cancellationToken);
+                                        if (message.CloseStatus == WebSocketCloseStatus.NormalClosure)
+                                        {
+                                            break;
+                                        }
+                                        MemoryStream requestBody = new(Util.UTF8.GetBytes(message.Message));
+                                        WebsocketServerSendStream responseBody = new(webSocket);
+                                        responseBody.OnClose = () =>
+                                        {
+                                            requestBody.Dispose();
+                                        };
+                                        Uri? url = null;
+                                        if (Json.TryParse(message.Message, out var msg))
+                                        {
+                                            if (msg.ContainsKey("url"))
+                                            {
+                                                url = new Uri(context.Request.Url!, msg.Read("url", string.Empty));
+                                            }
+                                            else
+                                            {
+                                                throw new Exception($"url not found, {msg}");
+                                            }
+                                            msg.Dispose();
+                                        }
+                                        Session session = new(new WebsocketServerRequest(websocketContext, url, requestBody), new WebsocketServerResponse(websocketContext, responseBody));
+                                        SessionQueue.Enqueue(session);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Logger.Error(e);
+                                        break;
+                                    }
+                                }
+                                webSocket.Dispose();
+                            });
+                        }
+                        else
+                        {
+                            SessionQueue.Enqueue(new Session(new HttpRequest(context.Request), new HttpResponse(context.Response)));
+                        }
+                    }
+                    catch (Exception e_loop)
+                    {
+                        Logger.Error("HttpServer Loop HttpListenerContext error", e_loop);
                         try
                         {
-                            websocketContext = await context.AcceptWebSocketAsync(subProtocol: null);
-                        }
-                        catch (Exception e)
-                        {
-                            Logger.Error(e);
-                            context.Response.StatusCode = 500;
                             context.Response.Close();
-                            return;
                         }
-                        WebSocket webSocket = websocketContext.WebSocket;
-                        while (true)
+                        catch (Exception e_close)
                         {
-                            try
-                            {
-                                var message = await webSocket.ReceiveMessage(cancellationToken);
-                                if(message.CloseStatus == WebSocketCloseStatus.NormalClosure)
-                                {
-                                    break;
-                                }
-                                MemoryStream requestBody = new(Util.UTF8.GetBytes(message.Message));
-                                WebsocketServerSendStream responseBody = new(webSocket);
-                                responseBody.OnClose = () =>
-                                {
-                                    requestBody.Dispose();
-                                };
-                                Uri? url = null;
-                                if (Json.TryParse(message.Message, out var msg))
-                                {
-                                    if (msg.ContainsKey("url"))
-                                    {
-                                        url = new Uri(context.Request.Url!, msg.Read("url", string.Empty));
-                                    }
-                                    else
-                                    {
-                                        throw new Exception($"url not found, {msg}");
-                                    }
-                                    msg.Dispose();
-                                }
-                                Session session = new(new WebsocketServerRequest(websocketContext, url, requestBody), new WebsocketServerResponse(websocketContext, responseBody));
-                                SessionQueue.Enqueue(session);
-                            }
-                            catch (Exception e)
-                            {
-                                Logger.Error(e);
-                                break;
-                            }
+                            Logger.Error("HttpServer Loop HttpListenerContext Close error", e_close);
                         }
-                        webSocket.Dispose();
-                    });
+                    }
                 }
-                else
+                catch (Exception e)
                 {
-                    SessionQueue.Enqueue(new Session(new HttpRequest(context.Request), new HttpResponse(context.Response)));
+                    Logger.Error("HttpServer Loop error, try to restart", e);
+                    break;
                 }
             }
-            catch(Exception e)
+            await Task.Delay(1000, cancellationToken);
+            while (EnableLoop && !cancellationToken.IsCancellationRequested)
             {
-                Logger.Error(e);
-                break;
+                try
+                {
+                    Listener.Stop();
+                    Listener = new HttpListener();
+                    Listener.Start();
+                    break;
+                }
+                catch (Exception e)
+                {
+                    Logger.Error("HttpServer Restart Failed, try to restart", e);
+                    await Task.Delay(1000, cancellationToken);
+                }
             }
         }
     }
