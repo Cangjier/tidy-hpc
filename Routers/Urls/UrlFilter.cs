@@ -243,7 +243,14 @@ public class UrlFilter(UrlRouter urlRouter)
                     }
                     else if (parameter.ParameterType == typeof(Stream))
                     {
-                        arguments[i] = session.Request.Body;
+                        if (session.Cache.Data.TryGet<Stream>(out var streamDataValue))
+                        {
+                            arguments[i] = streamDataValue;
+                        }
+                        else
+                        {
+                            arguments[i] = session.Request.Body;
+                        }
                         continue;
                     }
                     var aliases = parameterMetas[i].Aliases;
@@ -251,6 +258,10 @@ public class UrlFilter(UrlRouter urlRouter)
                     if (session.Cache.Data.TryGet(parameter.ParameterType, out var dataParameterValue))
                     {
                         arguments[i] = dataParameterValue;
+                    }
+                    else if (session.Cache.Data.TryGet(aliases, out var dataParameterKeyValue))
+                    {
+                        arguments[i] = dataParameterKeyValue;
                     }
                     else if (session.Cache.TryGetUrlRegexMatchGroup(aliases, out string? urlRegexGroupValue))
                     {

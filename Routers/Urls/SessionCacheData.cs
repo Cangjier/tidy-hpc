@@ -93,6 +93,25 @@ public class SessionCacheData : IDisposable
     }
 
     /// <summary>
+    /// 尝试获取缓存数据，按别名
+    /// </summary>
+    /// <param name="aliases"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    public bool TryGet(string[] aliases, out object? value)
+    {
+        foreach (var alias in aliases)
+        {
+            if (Data.TryGetValue(alias, out value))
+            {
+                return true;
+            }
+        }
+        value = default;
+        return false;
+    }
+
+    /// <summary>
     /// 设置缓存数据
     /// </summary>
     /// <typeparam name="T"></typeparam>
