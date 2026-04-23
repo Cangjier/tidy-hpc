@@ -379,7 +379,7 @@ public partial struct Json
         {
             if (field.Name == key)
             {
-                if(field.FieldType == typeof(Json))
+                if (field.FieldType == typeof(Json))
                 {
                     field.SetValue(self.Node, value);
                 }
@@ -493,7 +493,7 @@ public partial struct Json
     /// <returns></returns>
     public Json Get(string key, Json defaultValue)
     {
-        if(IsArray&&int.TryParse(key,out var index))
+        if (IsArray && int.TryParse(key, out var index))
         {
             return Get(index, defaultValue);
         }
@@ -861,13 +861,19 @@ public partial struct Json
         {
             if (index.Key is not null)
             {
-                last = last.Get(index.Key);
+                last = last.Get(index.Key, Json.Undefined);
+
             }
             else if (index.Index is not null)
             {
-                last = last.Get(index.Index.Value);
+                last = last.Get(index.Index.Value, Json.Undefined);
             }
             else
+            {
+                return defaultValue;
+            }
+
+            if (last.IsUndefined)
             {
                 return defaultValue;
             }
@@ -937,6 +943,16 @@ public partial struct Json
             onException?.Invoke(e);
             return defaultValue;
         }
+    }
+
+    /// <summary>
+    /// Contains path
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public bool ContainsPath(IEnumerable<JsonIndex> path)
+    {
+        return GetByPath(path, Json.Undefined).IsUndefined == false;
     }
 
     #endregion
