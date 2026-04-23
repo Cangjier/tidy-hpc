@@ -1,13 +1,14 @@
-﻿# TidyHPC
-- LiteJson: 和System.Text.Json相比，具备更强的兼容性，内部对象既可以是System.Text.Json，也可以是List/Dictionay等Object。
-- LiteDB: 类似于IndexDB，轻量级数据库
-- LiteHttpServer: 基于HttpListener封装的服务器，主要配合UrlRouter使用
-- UrlRouter: Url路由，只需要提供Session，即可路由，支持Filter/Router。
+﻿
+# TidyHPC
+- LiteJson: Compared to System.Text.Json, it offers stronger compatibility; internal objects can be either System.Text.Json or generic List/Dictionary Objects.
+- LiteDB: A lightweight database, similar to IndexDB.
+- LiteHttpServer: A server encapsulated based on HttpListener, mainly used together with UrlRouter.
+- UrlRouter: URL routing; you only need to provide a Session for routing, supporting both Filter and Router.
 
 ## UrlRouter
 ### Create
 ```csharp
-UrlRouter urlRouter=new();
+UrlRouter urlRouter = new();
 ```
 ### No Router
 ```csharp
@@ -94,24 +95,64 @@ urlRouter.Filter.Register(0, [".*"], async (Session session) =>
 
 ### Get Request Body Stream
 ```csharp
-urlRouter.Register(["/api/v1/hello"],async(Stream stream)=>{
-    // You can read the request body stream
+urlRouter.Register(["/api/v1/hello"], async (Stream stream) => {
+    // You can read the request body stream here
 });
 ```
 
 ### Set Response Body Stream
 ```csharp
-urlRouter.Register(["/api/v1/echo"],async(Stream stream)=>{
-    MemoryStream memoryStream=new();
+urlRouter.Register(["/api/v1/echo"], async (Stream stream) => {
+    MemoryStream memoryStream = new();
     stream.CopyTo(memoryStream);
     return memoryStream;
 });
 ```
 
-### Parse parameters from query string / BodyJson / Cache
+### Get Request Body As Json
+```csharp
+urlRouter.Register(["/api/v1/echo"], async (Session session) => {
+    var bodyJson = await session.Cache.GetRequestBodyJson();
+});
+```
+
+### Get Request Body As String
+```csharp
+urlRouter.Register(["/api/v1/echo"], async (Session session) => {
+    var bodyString = await session.Cache.GetRequestBodyString();
+});
+```
+
+### Parse parameters from query string / body json / cache
 ```csharp
 urlRouter.Register(["/api/v1/hi"], async (string name) => {
-    // The field 'name' will be obtained from either the query string or the body JSON or Cache
+    // The field 'name' will be obtained from either the query string, the body JSON, or the cache
     return $"hi~ {name}";
+});
+```
+
+### Parse parameters by deserializing from body json
+
+```csharp
+// Suppose there is a class Person
+urlRouter.Register(["/api/v1/hi"], async (Person person) => {
+    // In this case, the request Body should be
+    // {"person":{...}}, and the 'person' field will be automatically parsed and deserialized to the Person person parameter
+});
+```
+
+### Set/Use Cache
+```csharp
+// Suppose there is an interface A
+InterfaceA a = new ImplementationA();
+urlRouter.Filter.Register(0, [".*"], async (Session session) =>
+{
+    // Set InterfaceA into the context
+    session.Cache.Data.Set<InterfaceA>(a);
+});
+
+urlRouter.Register(["/api/v1/say"], async (InterfaceA a) =>
+{
+    // Retrieve InterfaceA from context
 });
 ```
