@@ -81,4 +81,14 @@ public readonly struct JsonPath : IEnumerable<JsonIndex>
         return result;
 
     }
+
+    /// <summary>
+    /// 隐式转换为JsonIndex数组
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public static implicit operator JsonIndex[](JsonPath path)
+    {
+        return path.Target;
+    }
 }

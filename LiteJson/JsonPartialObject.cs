@@ -265,6 +265,16 @@ public partial struct Json
     /// </summary>
     /// <param name="path"></param>
     /// <param name="value"></param>
+    public void SetByPath(JsonPath path, Json value)
+    {
+        SetByPath(path.Target, value);
+    }
+
+    /// <summary>
+    /// Set value by path, if not exist, create it
+    /// </summary>
+    /// <param name="path"></param>
+    /// <param name="value"></param>
     public void SetByPathString(IEnumerable<string> path, Json value) => SetByPath(path.Select(item => new JsonIndex(item)).ToArray(), value);
 
     /// <summary>
@@ -971,5 +981,5 @@ public partial struct Json
         return false;
     }
     #endregion
-    
+
 }
