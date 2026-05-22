@@ -76,6 +76,7 @@ public class UrlFilter(UrlRouter urlRouter)
                         {
                             session.Cache.SetUrlRegexMatchGroups(urlRegexMatchGroups);
                         }
+                        Logger.Debug($"Filter {filter.Pattern} {url}");
                         await filter.Handler(session);
                         if (session.Cache.FilterStatus == UrlFilterStatus.Rejected)
                         {
@@ -114,6 +115,7 @@ public class UrlFilter(UrlRouter urlRouter)
                         if (session.Cache.FilterStatus == UrlFilterStatus.Released)
                         {
                             await filter.Handler(session);
+                            Logger.Debug($"Filter {filter.Pattern} {url}");
                         }
                     }
                 }
