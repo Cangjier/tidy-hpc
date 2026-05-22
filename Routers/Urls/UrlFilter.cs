@@ -89,6 +89,7 @@ public class UrlFilter(UrlRouter urlRouter)
         }
         else
         {
+            Logger.Debug($"Search filter for {url}");
             if (HotNoFilterUrls.Contains(url))
             {
                 return UrlFilterStatus.Released;
