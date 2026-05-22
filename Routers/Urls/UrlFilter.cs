@@ -93,7 +93,6 @@ public class UrlFilter(UrlRouter urlRouter)
                 return UrlFilterStatus.Released;
             }
             hotMap = new();
-            HotFilterMap.TryAdd(url, hotMap);
             bool matched = false;
             foreach (var order in tempOrders)
             {
@@ -118,6 +117,14 @@ public class UrlFilter(UrlRouter urlRouter)
                         }
                     }
                 }
+            }
+            if (HotFilterMap.TryAdd(url, hotMap) == false)
+            {
+                foreach (var hotLayer in hotMap.Values)
+                {
+                    hotLayer.Filters.Clear();
+                }
+                hotMap.Clear();
             }
             if (matched == false)
             {
