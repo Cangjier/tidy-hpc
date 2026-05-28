@@ -51,6 +51,14 @@ public class UrlFilter(UrlRouter urlRouter)
     /// </summary>
     internal ConcurrentDictionary<string, ImmutableDictionary<string, string>> HotUrlRegexMatchGroups { get; } = new();
 
+    internal List<UrlDocumentRecord> DocumentRecords { get; } = new();
+
+    /// <summary>
+    /// 获取所有过滤器文档
+    /// </summary>
+    /// <returns></returns>
+    public UrlDocumentRecord[] GetDocumentRecords() => DocumentRecords.ToArray();
+
     /// <summary>
     /// 优先级
     /// </summary>
@@ -146,6 +154,7 @@ public class UrlFilter(UrlRouter urlRouter)
         var urlPattern = onPattern();
         var urlRegex = new Regex(urlPattern, RegexOptions.IgnoreCase);
         var urlMethod = method.GetCustomAttribute<UrlMethodAttribute>();
+        var methodTypeScriptInterface = method.GetCustomAttribute<TypeScriptInterfaceAttribute>()?.TypeScriptInterface;
 
         var parameters = method.GetParameters();
         var parameterMetas = new UrlParameterMetaRecord[parameters.Length];
@@ -154,15 +163,16 @@ public class UrlFilter(UrlRouter urlRouter)
             var parameter = parameters[i];
             var aliases = parameter.GetCustomAttribute<ArgsAliasesAttribute>()?.Aliases;
             var isOptional = parameter.GetCustomAttribute<OptionalAttribute>() != null;
+            var typeScriptInterface = parameter.GetCustomAttribute<TypeScriptInterfaceAttribute>()?.TypeScriptInterface;
             if (aliases == null && parameter.Name != null)
             {
                 aliases = [parameter.Name];
             }
             if (aliases == null)
             {
-                throw new Exception($"参数{parameter.Name}未指定别名");
+                throw new Exception($"Alias for parameter '{parameter.Name}' is not specified");
             }
-            parameterMetas[i] = new UrlParameterMetaRecord(parameter, aliases, isOptional, null);
+            parameterMetas[i] = new UrlParameterMetaRecord(parameter, aliases, isOptional, typeScriptInterface);
         }
 
         Type? taskResultType = null;
@@ -177,6 +187,13 @@ public class UrlFilter(UrlRouter urlRouter)
             taskResultType = genericTypeArguments[0];
             taskResultProperty = method.ReturnType.GetProperty("Result");
         }
+        DocumentRecords.Add(new UrlDocumentRecord(
+            urlPattern,
+            parameterMetas,
+            new UrlReturnMetaRecord(taskResultType ?? method.ReturnType, methodTypeScriptInterface),
+            method,
+            order
+        ));
         var sendError = async (Session session, Action<NetMessageInterface> onMessage) =>
         {
             session.Cache.FilterStatus = UrlFilterStatus.Rejected;

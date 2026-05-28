@@ -50,32 +50,11 @@ public record UrlReturnMetaRecord(
 /// <param name="Pattern"></param>
 /// <param name="Parameters"></param>
 /// <param name="RetunrType"></param>
-/// <param name="Target"></param>
-public record UrlDocumentRecord(string Pattern, UrlParameterMetaRecord[] Parameters, UrlReturnMetaRecord RetunrType, Delegate Target)
+/// <param name="MethodInfo"></param>
+/// <param name="Order"></param>
+public record UrlDocumentRecord(string Pattern, UrlParameterMetaRecord[] Parameters, UrlReturnMetaRecord RetunrType, MethodInfo MethodInfo, int? Order = null)
 {
-    /// <summary>
-    /// 将 UrlDocumentRecord 转换为 Json 记录
-    /// </summary>
-    /// <returns></returns>
-    public Json ToRecord()
-    {
-        var result = Json.NewObject();
-        result["pattern"] = Pattern;
-        var parametersArray = result.GetOrCreateArray("parameters");
-        foreach (var parameter in Parameters)
-        {
-            var parameterRecord = parametersArray.AddObject();
-            parameterRecord["name"] = parameter.Parameter.Name;
-            parameterRecord["aliases"] = parameter.Aliases;
-            parameterRecord["type"] = parameter.Parameter.ParameterType.FullName;
-            parameterRecord["isOptional"] = parameter.IsOptional;
-            parameterRecord["typeScriptInterface"] = parameter.TypeScriptInterface;
-        }
-        var returnRecord = result.GetOrCreateObject("return");
-        returnRecord["type"] = RetunrType.Type.FullName;
-        returnRecord["typeScriptInterface"] = RetunrType.TypeScriptInterface;
-        return result;
-    }
+
 }
 
 /// <summary>
@@ -243,7 +222,7 @@ public class UrlRouter
     /// <summary>
     /// 文档记录，提供给文档生成器使用
     /// </summary>
-    private ConcurrentDictionary<string, UrlDocumentRecord> Document { get; } = [];
+    private List<UrlDocumentRecord> DocumentRecords { get; } = [];
 
     /// <summary>
     /// 过滤器
@@ -376,7 +355,7 @@ public class UrlRouter
     /// 获取所有文档记录
     /// </summary>
     /// <returns></returns>
-    public UrlDocumentRecord[] GetDocument() => Document.Values.ToArray();
+    public UrlDocumentRecord[] GetDocumentRecords() => DocumentRecords.ToArray();
 
     /// <summary>
     /// 通过方法反射注册路由
@@ -405,7 +384,7 @@ public class UrlRouter
             }
             if (aliases == null)
             {
-                throw new Exception($"参数{parameter.Name}未指定别名");
+                throw new Exception($"Alias for parameter '{parameter.Name}' is not specified");
             }
             parameterMetas[i] = new UrlParameterMetaRecord(parameter, aliases, isOptional, typeScriptInterface);
         }
@@ -424,11 +403,11 @@ public class UrlRouter
             taskResultType = genericTypeArguments[0];
             taskResultProperty = method.ReturnType.GetProperty("Result");
         }
-        Document.TryAdd(urlPattern, new UrlDocumentRecord(
+        DocumentRecords.Add(new UrlDocumentRecord(
             urlPattern,
             parameterMetas,
             new UrlReturnMetaRecord(taskResultType ?? method.ReturnType, methodTypeScriptInterface),
-            onInstance
+            method
         ));
         var sendError = async (Session session, Action<NetMessageInterface> onMessage) =>
         {
