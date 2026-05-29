@@ -6,7 +6,7 @@ namespace TidyHPC.LiteXml;
 /// <summary>
 /// Xml Wrapper
 /// </summary>
-public readonly struct Xml:IEnumerable<Xml>
+public readonly struct Xml : IEnumerable<Xml>
 {
     /// <summary>
     /// Create Xml from XmlNode
@@ -262,7 +262,7 @@ public readonly struct Xml:IEnumerable<Xml>
         {
             if (Node is null) return [];
             List<Xml> result = [];
-            foreach(XmlNode node in Node.ChildNodes)
+            foreach (XmlNode node in Node.ChildNodes)
             {
                 result.Add(new Xml(node));
             }
@@ -359,7 +359,7 @@ public readonly struct Xml:IEnumerable<Xml>
     /// </summary>
     /// <param name="name"></param>
     /// <param name="value"></param>
-    public void AddAttribute(string name,string value)=>SetAttribute(name,value);
+    public void AddAttribute(string name, string value) => SetAttribute(name, value);
 
     /// <summary>
     /// Get Attribute
@@ -367,7 +367,7 @@ public readonly struct Xml:IEnumerable<Xml>
     /// <param name="name"></param>
     /// <param name="defaultValue"></param>
     /// <returns></returns>
-    public string GetAttribute(string name,string defaultValue)
+    public string GetAttribute(string name, string defaultValue)
     {
         if (Node == null) return defaultValue;
         var node = Node.Attributes?[name];
@@ -507,16 +507,16 @@ public readonly struct Xml:IEnumerable<Xml>
     /// <param name="attributeName"></param>
     /// <param name="attributeValue"></param>
     /// <returns></returns>
-    public bool GetElementByNameAndAttribute(string name, string attributeName, string attributeValue)
+    public Xml GetElementByNameAndAttribute(string name, string attributeName, string attributeValue)
     {
-        if (Node == null) return false;
+        if (Node == null) throw new NullReferenceException($"The xml is null, cannot get element by name and attribute");
         foreach (XmlNode node in Node)
         {
             var xml = new Xml(node);
             if (!xml.IsElement) continue;
-            if (xml.Name == name && xml.GetAttribute(attributeName, "") == attributeValue) return true;
+            if (xml.Name == name && xml.GetAttribute(attributeName, "") == attributeValue) return xml;
         }
-        return false;
+        throw new Exception($"Cannot find element by name {name} and attribute {attributeName} with value {attributeValue}");
     }
 
     /// <summary>
@@ -670,7 +670,7 @@ public readonly struct Xml:IEnumerable<Xml>
     /// <param name="path"></param>
     /// <param name="onDefaultValue"></param>
     /// <returns></returns>
-    public static Xml TryLoad(string path,Func<Xml> onDefaultValue)
+    public static Xml TryLoad(string path, Func<Xml> onDefaultValue)
     {
         try
         {
