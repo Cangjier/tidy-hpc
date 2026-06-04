@@ -27,7 +27,7 @@ public class ObjectConverter : JsonConverter<object?>
                     result.Add(JsonSerializer.Deserialize<object>(ref reader, options));
                 }
                 else if (reader.TokenType == JsonTokenType.StartObject)
-                { 
+                {
                     result.Add(JsonSerializer.Deserialize<object>(ref reader, options));
                 }
                 else
@@ -39,7 +39,7 @@ public class ObjectConverter : JsonConverter<object?>
         }
         else if (reader.TokenType == JsonTokenType.StartObject)
         {
-            Dictionary<string,object?> result = [];
+            Dictionary<string, object?> result = [];
             while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
             {
                 string? propertyName = reader.GetString();
@@ -63,15 +63,15 @@ public class ObjectConverter : JsonConverter<object?>
             }
             return result;
         }
-        else if(reader.TokenType == JsonTokenType.False)
+        else if (reader.TokenType == JsonTokenType.False)
         {
             return false;
         }
-        else if(reader.TokenType == JsonTokenType.True)
+        else if (reader.TokenType == JsonTokenType.True)
         {
             return true;
         }
-        else if(reader.TokenType == JsonTokenType.Number)
+        else if (reader.TokenType == JsonTokenType.Number)
         {
             if (reader.TryGetByte(out byte valueByte))
             {
@@ -102,15 +102,15 @@ public class ObjectConverter : JsonConverter<object?>
                 throw new JsonException();
             }
         }
-        else if(reader.TokenType == JsonTokenType.String)
+        else if (reader.TokenType == JsonTokenType.String)
         {
             return reader.GetString();
         }
-        else if(reader.TokenType == JsonTokenType.Null)
+        else if (reader.TokenType == JsonTokenType.Null)
         {
             return null;
         }
-        else if(reader.TokenType == JsonTokenType.Comment)
+        else if (reader.TokenType == JsonTokenType.Comment)
         {
             return null;
         }
@@ -145,6 +145,10 @@ public class UnsupportedConverter : JsonConverter<object>
     /// <returns></returns>
     public override bool CanConvert(Type typeToConvert)
     {
+        if (typeToConvert.IsInterface)
+        {
+            return true;
+        }
         if (typeof(Type).IsAssignableFrom(typeToConvert) || typeToConvert == typeof(Json))
         {
             return true;
@@ -174,7 +178,7 @@ public class UnsupportedConverter : JsonConverter<object>
         {
             return true;
         }
-        else if(typeToConvert.IsGenericType && typeToConvert.GetGenericTypeDefinition() == typeof(List<>))
+        else if (typeToConvert.IsGenericType && typeToConvert.GetGenericTypeDefinition() == typeof(List<>))
         {
             return true;
         }
@@ -203,7 +207,7 @@ public class UnsupportedConverter : JsonConverter<object>
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
         var valueType = value?.GetType();
-        if(value is null)
+        if (value is null)
         {
             writer.WriteNullValue();
         }
@@ -226,13 +230,13 @@ public class UnsupportedConverter : JsonConverter<object>
             }
             writer.WriteEndObject();
         }
-        else if(valueType?.IsGenericType==true && valueType.GetGenericTypeDefinition() == typeof(List<>))
+        else if (valueType?.IsGenericType == true && valueType.GetGenericTypeDefinition() == typeof(List<>))
         {
             var list = (IList)value!;
             writer.WriteStartArray();
             foreach (var item in list)
             {
-                if(item is Json jsonValue && jsonValue.IsUndefined)
+                if (item is Json jsonValue && jsonValue.IsUndefined)
                 {
                     writer.WriteNullValue();
                 }
@@ -250,14 +254,6 @@ public class UnsupportedConverter : JsonConverter<object>
         else if (value is Json json)
         {
             JsonSerializer.Serialize(writer, json.Node, options);
-            //if (json.IsUndefined)
-            //{
-            //    writer.WriteNullValue();
-            //}
-            //else
-            //{
-            //    JsonSerializer.Serialize(writer, json.Node, options);
-            //}
         }
         else if (value is System.Reflection.MemberInfo member)
         {
@@ -316,9 +312,14 @@ public class UnsupportedConverter : JsonConverter<object>
             }
             writer.WriteEndObject();
         }
+        else if (valueType?.FullName?.StartsWith("System.Runtime.CompilerServices.AsyncTaskMethodBuilder") == true)
+        {
+            writer.WriteStringValue("[async task method builder]");
+        }
         else
         {
-            writer.WriteStringValue(value.ToString());
+            var actualType = value.GetType();
+            JsonSerializer.Serialize(writer, value, actualType, options);
         }
     }
 }
