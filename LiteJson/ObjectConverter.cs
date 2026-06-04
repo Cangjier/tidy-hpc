@@ -250,7 +250,7 @@ public class UnsupportedConverter : JsonConverter<object>
         else if (value is Type type)
             writer.WriteStringValue(type.FullName);
         else if (value is MulticastDelegate delegateValue)
-            writer.WriteStringValue("[method]");
+            writer.WriteStringValue($"[method: {delegateValue.Method.Name}]");
         else if (value is Json json)
         {
             JsonSerializer.Serialize(writer, json.Node, options);
