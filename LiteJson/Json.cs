@@ -165,6 +165,20 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
             else if (Node is IList list) return list.Count;
             else if (Node is Array array) return array.Length;
             else if (Node is string stringValue) return stringValue.Length;
+            else if (Node is JsonElement jsonElement)
+            {
+                if (jsonElement.ValueKind == JsonValueKind.Array) return jsonElement.GetArrayLength();
+                else if (jsonElement.ValueKind == JsonValueKind.Object)
+                {
+#if NET10_0_OR_GREATER
+                    return jsonElement.GetPropertyCount();
+#else
+                    return jsonElement.EnumerateObject().Count();
+#endif
+                }
+                else if (jsonElement.ValueKind == JsonValueKind.String) return jsonElement.GetString()?.Length ?? 0;
+                else return 0;
+            }
             else if (Node.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>)))
             {
                 return Node.GetType().GetProperty("Count")?.GetValue(Node) as int? ?? 0;
