@@ -111,19 +111,19 @@ public static class Extensions
                         value = temp.ToArray(item => item.ToDouble);
                         return true;
                     }
-                    else if (type == typeof(int) && temp.IsInt32)
+                    else if (type == typeof(int) && temp.IsNumber)
                     {
-                        value = temp.AsInt32;
+                        value = temp.ToInt32;
                         return true;
                     }
-                    else if (type == typeof(float) && temp.IsFloat)
+                    else if (type == typeof(float) && temp.IsNumber)
                     {
-                        value = temp.AsFloat;
+                        value = temp.ToFloat;
                         return true;
                     }
-                    else if (type == typeof(double) && temp.IsDouble)
+                    else if (type == typeof(double) && temp.IsNumber)
                     {
-                        value = temp.AsDouble;
+                        value = temp.ToDouble;
                         return true;
                     }
                     else if (type == typeof(bool) && temp.IsBoolean)
