@@ -902,6 +902,21 @@ public class Database
         {
             indexValue = Util.HexToBytes((string)indexValue);
         }
+        else if(indexField.Type == FieldType.Guid)
+        {
+            if(indexValue is string indexValueString)
+            {
+                if(Guid.TryParse(indexValueString,out var indexValueGuid) == false)
+                {
+                    throw new Exception($"Invalid Guid format: {indexValueString}");
+                }
+                indexValue = indexValueGuid;
+            }
+            else if (indexValue is not Guid)
+            {
+                throw new Exception($"Invalid Guid format: {indexValue}");
+            }
+        }
         return await Cache.DictionaryVisitor.Get(indexField, mappingHashTableAddress, indexValue);
     }
 
@@ -1020,6 +1035,7 @@ public class Database
         var objectInterface = await GetObjectInterface(interfaceName);
         if (objectInterface == null)
         {
+            Logger.WriteLine($"contains_1(false) index {interfaceName} {indexName} {indexValue}");
             return false;
         }
         long mappingHashTableAddress = 0;
@@ -1038,6 +1054,7 @@ public class Database
         }
         if (mappingHashTableAddress == 0)
         {
+            Logger.WriteLine($"contains_2(false) index {interfaceName} {indexName} {indexValue}");
             return false;
         }
         if (indexField.Type == FieldType.ReferneceString)
@@ -1048,7 +1065,24 @@ public class Database
         {
             indexValue = Util.HexToBytes((string)indexValue);
         }
-        return await Cache.DictionaryVisitor.ContainsKey(indexField, mappingHashTableAddress, indexValue);
+        else if(indexField.Type == FieldType.Guid)
+        {
+            if(indexValue is string indexValueString)
+            {
+                if(Guid.TryParse(indexValueString,out var indexValueGuid) == false)
+                {
+                    throw new Exception($"Invalid Guid format: {indexValueString}");
+                }
+                indexValue = indexValueGuid;
+            }
+            else if (indexValue is not Guid)
+            {
+                throw new Exception($"Invalid Guid format: {indexValue}");
+            }
+        }
+        var result = await Cache.DictionaryVisitor.ContainsKey(indexField, mappingHashTableAddress, indexValue);
+        Logger.WriteLine($"contains_3(${result}) index {interfaceName} {indexName} {indexValue}");
+        return result;
     }
 
     /// <summary>

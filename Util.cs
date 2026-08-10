@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Reflection;
 using System.Text;
 using TidyHPC.LiteJson;
 
@@ -74,6 +75,33 @@ public class Util
         return hex.ToString();
     }
 
+    /// <summary>
+    /// Get the inner exception of the exception
+    /// </summary>
+    /// <param name="exception"></param>
+    /// <returns></returns>
+    public static Exception? GetInnerException(Exception? exception)
+    {
+        while (exception is TargetInvocationException or AggregateException)
+        {
+            if (exception is TargetInvocationException targetInvocationException)
+            {
+                exception = targetInvocationException.InnerException;
+            }
+            else if (exception is AggregateException aggregateException)
+            {
+                if (aggregateException.InnerExceptions.Count == 1)
+                {
+                    exception = aggregateException.InnerExceptions[0];
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
 
+        return exception;
+    }
 
 }

@@ -1,10 +1,13 @@
 ﻿using System.Text.Json.Nodes;
 
 namespace TidyHPC.LiteJson;
+
 public partial struct Json
 {
     #region Array
+
     #region Getter
+
     /// <summary>
     /// Get the value by index, if not exist, throw exception
     /// </summary>
@@ -12,14 +15,8 @@ public partial struct Json
     /// <returns></returns>
     public readonly Json this[int index]
     {
-        get
-        {
-            return Get(index, Undefined);
-        }
-        set
-        {
-            Set(index, value);
-        }
+        get { return Get(index, Undefined); }
+        set { Set(index, value); }
     }
 
     /// <summary>
@@ -37,6 +34,7 @@ public partial struct Json
             {
                 return defaultValue;
             }
+
             return new(array[index]);
         }
         else if (IsString)
@@ -46,7 +44,8 @@ public partial struct Json
             {
                 return defaultValue;
             }
-            return new(stringValue[index]);
+
+            return new(stringValue[index].ToString());
         }
         else if (IsObject)
         {
@@ -74,6 +73,7 @@ public partial struct Json
             {
                 throw new Exception($"Index out of range: {index}, {ToString()}");
             }
+
             return new(array[index]);
         }
         else if (IsString)
@@ -83,6 +83,7 @@ public partial struct Json
             {
                 throw new Exception($"Index out of range: {index}, {ToString()}");
             }
+
             return new(stringValue[index]);
         }
         else
@@ -90,6 +91,7 @@ public partial struct Json
             throw new Exception($"Unsupported type:{GetValueKind()}");
         }
     }
+
     /// <summary>
     /// Get the value by index, if not exist, create it
     /// </summary>
@@ -105,6 +107,7 @@ public partial struct Json
             array.Add(result);
             return new(result);
         }
+
         return new(array[index]);
     }
 
@@ -123,11 +126,14 @@ public partial struct Json
             array.Add(result);
             return new(result);
         }
+
         return new(array[index]);
     }
+
     #endregion
 
     #region Setter
+
     /// <summary>
     /// Set value by index
     /// </summary>
@@ -210,6 +216,7 @@ public partial struct Json
     {
         AssertArray(self => self[index] = value);
     }
+
     #endregion
 
     #region Add
@@ -341,9 +348,11 @@ public partial struct Json
     {
         AssertArray(self => self.Add(item));
     }
+
     #endregion
 
     #region Insert
+
     /// <summary>
     /// 插入一个元素
     /// </summary>
@@ -353,6 +362,7 @@ public partial struct Json
     {
         AssertArray(self => self.Insert(index, value.Node));
     }
+
     #endregion
 
     /// <summary>
@@ -380,6 +390,7 @@ public partial struct Json
         {
             return AsString.Contains(value.AsString);
         }
+
         return false;
     }
 
@@ -399,6 +410,7 @@ public partial struct Json
                 {
                     return index;
                 }
+
                 index++;
             }
         }
@@ -411,9 +423,11 @@ public partial struct Json
                 {
                     return index;
                 }
+
                 index++;
             }
         }
+
         return -1;
     }
 
@@ -434,6 +448,7 @@ public partial struct Json
                 {
                     return index;
                 }
+
                 index++;
             }
         }
@@ -446,9 +461,11 @@ public partial struct Json
                 {
                     return index;
                 }
+
                 index++;
             }
         }
+
         return -1;
     }
 
@@ -481,6 +498,7 @@ public partial struct Json
                 }
             }
         }
+
         return -1;
     }
 
@@ -514,6 +532,7 @@ public partial struct Json
                 }
             }
         }
+
         return -1;
     }
 
@@ -532,10 +551,7 @@ public partial struct Json
     public Json Splice(int start, int count, params Json[] items)
     {
         List<object?>? result = null;
-        AssertArray(self =>
-        {
-            result = self.Splice(start, count, items);
-        });
+        AssertArray(self => { result = self.Splice(start, count, items); });
         return new(result);
     }
 
@@ -555,10 +571,12 @@ public partial struct Json
             {
                 end = self.Count + end;
             }
+
             if (start < 0)
             {
                 start = self.Count + start;
             }
+
             result = self.Slice(start, end);
             return new(result);
         }
@@ -569,10 +587,12 @@ public partial struct Json
             {
                 end = self.Length + end;
             }
+
             if (start < 0)
             {
                 start = self.Length + start;
             }
+
             return new(self[start..end]);
         }
         else
@@ -588,10 +608,7 @@ public partial struct Json
     public Json Reverse()
     {
         List<object?>? result = null;
-        AssertArray(self =>
-        {
-            result = self.Reverse();
-        });
+        AssertArray(self => { result = self.Reverse(); });
         return new(result);
     }
 
@@ -603,10 +620,7 @@ public partial struct Json
     public Json Concat(params Json[] items)
     {
         List<object?>? result = null;
-        AssertArray(self =>
-        {
-            result = self.Concat(items);
-        });
+        AssertArray(self => { result = self.Concat(items); });
         return new(result);
     }
 
@@ -624,6 +638,7 @@ public partial struct Json
             {
                 throw new IndexOutOfRangeException();
             }
+
             self.RemoveAt(index);
         });
     }

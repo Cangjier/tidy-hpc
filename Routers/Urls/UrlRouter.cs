@@ -42,7 +42,7 @@ public record UrlParameterMetaRecord(
 public record UrlReturnMetaRecord(
     Type Type,
     string? TypeScriptInterface
-    );
+);
 
 /// <summary>
 /// Url 文档记录，可以提供给文档生成器使用
@@ -52,9 +52,13 @@ public record UrlReturnMetaRecord(
 /// <param name="RetunrType"></param>
 /// <param name="MethodInfo"></param>
 /// <param name="Order"></param>
-public record UrlDocumentRecord(string Pattern, UrlParameterMetaRecord[] Parameters, UrlReturnMetaRecord RetunrType, MethodInfo MethodInfo, int? Order = null)
+public record UrlDocumentRecord(
+    string Pattern,
+    UrlParameterMetaRecord[] Parameters,
+    UrlReturnMetaRecord RetunrType,
+    MethodInfo MethodInfo,
+    int? Order = null)
 {
-
 }
 
 /// <summary>
@@ -79,6 +83,7 @@ public class UrlRouterEvents(UrlRouter urlRouter)
         {
             return await OnBeforeRouteAsync(url, session);
         }
+
         return true;
     }
 
@@ -93,6 +98,7 @@ public class UrlRouterEvents(UrlRouter urlRouter)
         {
             return await OnBeforeHandlerAsync(url, session);
         }
+
         return true;
     }
 
@@ -237,7 +243,8 @@ public class UrlRouter
     /// <summary>
     /// 请求体Json解析模式
     /// </summary>
-    public JsonDeserializeTypeMode RequestBodyJsonDeserializeTypeMode { get; set; } = JsonDeserializeTypeMode.JsonElement;
+    public JsonDeserializeTypeMode RequestBodyJsonDeserializeTypeMode { get; set; } =
+        JsonDeserializeTypeMode.JsonElement;
 
     /// <summary>
     /// 路由
@@ -255,6 +262,7 @@ public class UrlRouter
             {
                 session.Cache.SetUrlRegexMatchGroups(urlRegexMatchGroups);
             }
+
             if (await Events.BeforeHandlerAsync(url, session) == false) return;
             await HotMap[url].Handler(session);
             await Events.AfterHandler(url, session);
@@ -266,6 +274,7 @@ public class UrlRouter
                 await Events.NoRoute(url, session);
                 return;
             }
+
             foreach (var item in RealMap)
             {
                 var matchResult = item.Value.Regex.Match(url);
@@ -287,10 +296,12 @@ public class UrlRouter
                     {
                         Logger.Error(e);
                     }
+
                     await Events.AfterHandler(url, session);
                     return;
                 }
             }
+
             HotNoRouterUrls.Add(url);
             await Events.NoRoute(url, session);
         }
@@ -310,6 +321,7 @@ public class UrlRouter
             {
                 break;
             }
+
             var session = await server.GetNextSession(cancellationToken);
             string? url = null;
             try
@@ -325,6 +337,7 @@ public class UrlRouter
                 Logger.Error(e);
                 continue;
             }
+
             if (url != null)
             {
                 _ = Task.Run(async () =>
@@ -348,6 +361,7 @@ public class UrlRouter
                 Logger.Error("Url is null");
             }
         }
+
         Logger.Info("UrlRouter Listen stopped");
     }
 
@@ -382,10 +396,12 @@ public class UrlRouter
             {
                 aliases = [parameter.Name];
             }
+
             if (aliases == null)
             {
                 throw new Exception($"Alias for parameter '{parameter.Name}' is not specified");
             }
+
             parameterMetas[i] = new UrlParameterMetaRecord(parameter, aliases, isOptional, typeScriptInterface);
         }
 
@@ -400,9 +416,11 @@ public class UrlRouter
             {
                 throw new NotImplementedException();
             }
+
             taskResultType = genericTypeArguments[0];
             taskResultProperty = method.ReturnType.GetProperty("Result");
         }
+
         DocumentRecords.Add(new UrlDocumentRecord(
             urlPattern,
             parameterMetas,
@@ -432,7 +450,6 @@ public class UrlRouter
                     }
                     else
                     {
-
                         if (UrlResponse.DefaultContentEncoding == "br")
                         {
                             using BrotliStream brotliStream = new(session.Response.Body, CompressionMode.Compress);
@@ -459,7 +476,6 @@ public class UrlRouter
                     Logger.Error(e);
                     throw new Exception("Failed to send error", e);
                 }
-
             });
         };
         var sendErrorWrapper = async (Session session, int? code, string message, Exception? e) =>
@@ -480,9 +496,12 @@ public class UrlRouter
             var queryStrings = session.Request.Query;
             if (urlMethod != null && urlMethod.Method != session.Request.Method)
             {
-                await sendErrorWrapper(session, null, $"Request method does not match, expected method is {urlMethod.Method}, actual method is {session.Request.Method}", null);
+                await sendErrorWrapper(session, null,
+                    $"Request method does not match, expected method is {urlMethod.Method}, actual method is {session.Request.Method}",
+                    null);
                 return;
             }
+
             var instance = onInstance();
             var arguments = new object?[parameters.Length];
             try
@@ -505,8 +524,10 @@ public class UrlRouter
                         {
                             arguments[i] = session.Request.Body;
                         }
+
                         continue;
                     }
+
                     var aliases = parameterMetas[i].Aliases;
                     var isOptional = parameterMetas[i].IsOptional;
                     if (session.Cache.Data.TryGet(parameter.ParameterType, out var dataParameterValue))
@@ -525,7 +546,8 @@ public class UrlRouter
                         }
                         else
                         {
-                            throw new Exception($"Parameter {string.Join(',', aliases)} cannot be converted to {parameter.ParameterType}");
+                            throw new Exception(
+                                $"Parameter {string.Join(',', aliases)} cannot be converted to {parameter.ParameterType}");
                         }
                     }
                     else if (queryStrings.TryGet(aliases, out string queryValue))
@@ -536,14 +558,17 @@ public class UrlRouter
                         }
                         else
                         {
-                            throw new Exception($"Parameter {string.Join(',', aliases)} cannot be converted to {parameter.ParameterType}");
+                            throw new Exception(
+                                $"Parameter {string.Join(',', aliases)} cannot be converted to {parameter.ParameterType}");
                         }
                     }
                     else if ((await session.Cache.GetRequstBodyJson(RequestBodyJsonDeserializeTypeMode, e =>
-                    {
-                        Logger.Error(e);
-                        throw new Exception("Failed to parse request body", e);
-                    })).TryGet(aliases, parameter.ParameterType, out var bodyDataValue, () => throw new Exception($"Parameter {string.Join(',', aliases)} cannot be converted to {parameter.ParameterType}")))
+                             {
+                                 Logger.Error(e);
+                                 throw new Exception("Failed to parse request body", e);
+                             })).TryGet(aliases, parameter.ParameterType, out var bodyDataValue,
+                                 () => throw new Exception(
+                                     $"Parameter {string.Join(',', aliases)} cannot be converted to {parameter.ParameterType}")))
                     {
                         arguments[i] = bodyDataValue;
                     }
@@ -554,14 +579,16 @@ public class UrlRouter
                     }
                     else
                     {
-                        if (isOptional == false) throw new Exception($"Parameter `{string.Join(',', aliases)}` not found");
+                        if (isOptional == false)
+                            throw new Exception($"Parameter `{string.Join(',', aliases)}` not found");
                     }
                 }
             }
             catch (TargetInvocationException targetInvocationException)
             {
                 Logger.Error(targetInvocationException.InnerException);
-                await sendErrorWrapper(session, -1, targetInvocationException.InnerException?.Message ?? "", targetInvocationException.InnerException);
+                await sendErrorWrapper(session, -1, targetInvocationException.InnerException?.Message ?? "",
+                    targetInvocationException.InnerException);
                 return;
             }
             catch (Exception e)
@@ -579,7 +606,14 @@ public class UrlRouter
             }
             catch (TargetInvocationException targetInvocationException)
             {
-                await sendErrorWrapper(session, -1, targetInvocationException.InnerException?.Message ?? "", targetInvocationException.InnerException);
+                var innerException = Util.GetInnerException(targetInvocationException);
+                await sendErrorWrapper(session, -1, innerException?.Message ?? "", innerException?.InnerException);
+                return;
+            }
+            catch (AggregateException aggregateException)
+            {
+                var innerException = Util.GetInnerException(aggregateException);
+                await sendErrorWrapper(session, -1, innerException?.Message ?? "", innerException?.InnerException);
                 return;
             }
             catch (Exception e)
@@ -587,8 +621,13 @@ public class UrlRouter
                 await sendErrorWrapper(session, -1, e.Message, e);
                 return;
             }
+
             await session.CompleteAsync(async () =>
             {
+                if(session.Request.Url.PathAndQuery.Contains("login"))
+                {
+
+                }
                 if (methodReturnTypeIsTask)
                 {
                     var resultValue = taskResultProperty?.GetValue(result);
@@ -748,7 +787,8 @@ public class UrlRouter
     /// <typeparam name="T8"></typeparam>
     /// <param name="urlAliases"></param>
     /// <param name="func"></param>
-    public void Register<T1, T2, T3, T4, T5, T6, T7, T8>(string[] urlAliases, Func<T1, T2, T3, T4, T5, T6, T7, T8, Task> func)
+    public void Register<T1, T2, T3, T4, T5, T6, T7, T8>(string[] urlAliases,
+        Func<T1, T2, T3, T4, T5, T6, T7, T8, Task> func)
     {
         Register(urlAliases, func.Method, () => func.Target);
     }
@@ -846,7 +886,8 @@ public class UrlRouter
     /// <typeparam name="T6"></typeparam>
     /// <param name="urlAliases"></param>
     /// <param name="func"></param>
-    public void Register<TResult, T1, T2, T3, T4, T5, T6>(string[] urlAliases, Func<T1, T2, T3, T4, T5, T6, Task<TResult>> func)
+    public void Register<TResult, T1, T2, T3, T4, T5, T6>(string[] urlAliases,
+        Func<T1, T2, T3, T4, T5, T6, Task<TResult>> func)
     {
         Register(urlAliases, func.Method, () => func.Target);
     }
@@ -864,7 +905,8 @@ public class UrlRouter
     /// <typeparam name="T7"></typeparam>
     /// <param name="urlAliases"></param>
     /// <param name="func"></param>
-    public void Register<TResult, T1, T2, T3, T4, T5, T6, T7>(string[] urlAliases, Func<T1, T2, T3, T4, T5, T6, T7, Task<TResult>> func)
+    public void Register<TResult, T1, T2, T3, T4, T5, T6, T7>(string[] urlAliases,
+        Func<T1, T2, T3, T4, T5, T6, T7, Task<TResult>> func)
     {
         Register(urlAliases, func.Method, () => func.Target);
     }
@@ -883,7 +925,8 @@ public class UrlRouter
     /// <typeparam name="T8"></typeparam>
     /// <param name="urlAliases"></param>
     /// <param name="func"></param>
-    public void Register<TResult, T1, T2, T3, T4, T5, T6, T7, T8>(string[] urlAliases, Func<T1, T2, T3, T4, T5, T6, T7, T8, Task<TResult>> func)
+    public void Register<TResult, T1, T2, T3, T4, T5, T6, T7, T8>(string[] urlAliases,
+        Func<T1, T2, T3, T4, T5, T6, T7, T8, Task<TResult>> func)
     {
         Register(urlAliases, func.Method, () => func.Target);
     }

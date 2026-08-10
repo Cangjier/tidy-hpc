@@ -5,6 +5,7 @@ using TidyHPC.Loggers;
 using TidyHPC.Routers.Urls.Responses;
 
 namespace TidyHPC.Routers.Urls;
+
 /// <summary>
 /// Session 设置器
 /// </summary>
@@ -23,66 +24,84 @@ public class SessionSetter(Session session)
     /// <returns></returns>
     public async Task<bool> SetResponse(object? resultValue, UrlRouter urlRouter)
     {
-        if (resultValue is FilterResult filterResult)
+        object? nodeValue = null;
+        if (resultValue is Json nodeJson)
         {
+            nodeValue = nodeJson.Node;
+        }
+
+        if (resultValue is FilterResult || nodeValue is FilterResult)
+        {
+            var filterResult = nodeValue as FilterResult ??
+                               resultValue as FilterResult ?? throw new NotImplementedException();
             Session.Cache.FilterStatus = filterResult.Status;
         }
-        else if (resultValue is NoneResponse)
+        else if (resultValue is NoneResponse || nodeValue is NoneResponse)
         {
-
         }
-        else if (resultValue is Redirect urlFilterRedirect)
+        else if (resultValue is Redirect || nodeValue is Redirect)
         {
-            //重定向
+            var urlFilterRedirect = nodeValue as Redirect ??
+                                    resultValue as Redirect ?? throw new NotImplementedException();
             Session.Response.StatusCode = 302;
             Session.Response.Headers.SetHeader("Location", urlFilterRedirect.Url);
         }
-        else if (resultValue is ResponseStatusCode urlFilterStatusCode)
+        else if (resultValue is ResponseStatusCode || nodeValue is ResponseStatusCode)
         {
             //状态码
+            var urlFilterStatusCode = nodeValue as ResponseStatusCode ??
+                                      resultValue as ResponseStatusCode ?? throw new NotImplementedException();
             Session.Cache.FilterStatus = UrlFilterStatus.Rejected;
             Session.Response.StatusCode = urlFilterStatusCode.StatusCode;
         }
-        else if (resultValue is Stream resultStream)
+        else if (resultValue is Stream || nodeValue is Stream)
         {
             // 如果是流，将流拷贝到响应体
+            var resultStream = nodeValue as Stream ??
+                               resultValue as Stream ?? throw new NotImplementedException();
             await resultStream.CopyToAsync(Session.Response.Body);
             resultStream.Dispose();
         }
-        else if (resultValue is Stream[] resultStreams)
+        else if (resultValue is Stream[] || nodeValue is Stream[])
         {
+            var resultStreams = nodeValue as Stream[] ??
+                                resultValue as Stream[] ?? throw new NotImplementedException();
             foreach (var stream in resultStreams)
             {
                 await stream.CopyToAsync(Session.Response.Body);
                 stream.Dispose();
             }
         }
-        else if (resultValue is FileStream[] resultFileStreams)
+        else if (resultValue is FileStream[] || nodeValue is FileStream[])
         {
+            var resultFileStreams = nodeValue as FileStream[] ??
+                                    resultValue as FileStream[] ?? throw new NotImplementedException();
             foreach (var stream in resultFileStreams)
             {
                 await stream.CopyToAsync(Session.Response.Body);
                 stream.Dispose();
             }
         }
-        else if (resultValue is BinaryFile urlResponseFile)
+        else if (resultValue is BinaryFile || nodeValue is BinaryFile)
         {
+            var urlResponseFile = nodeValue as BinaryFile ??
+                                  resultValue as BinaryFile ?? throw new NotImplementedException();
             if (!File.Exists(urlResponseFile.FilePath))
             {
                 Session.Response.StatusCode = 404;
                 Session.Response.Headers.SetHeader("Content-Type", "text/html");
                 Session.Response.Body.Write(Util.UTF8.GetBytes($"""
-                <html>
-                <head>
-                <title>404 Not Found</title>
-                </head>
-                <body>
-                <h1>404 Not Found</h1>
-                <p>The requested File was not found on this server.</p>
-                <p>File: {urlResponseFile.RelativeFilePath}</p>
-                </body>
-                </html>
-                """));
+                                                                <html>
+                                                                <head>
+                                                                <title>404 Not Found</title>
+                                                                </head>
+                                                                <body>
+                                                                <h1>404 Not Found</h1>
+                                                                <p>The requested File was not found on this server.</p>
+                                                                <p>File: {urlResponseFile.RelativeFilePath}</p>
+                                                                </body>
+                                                                </html>
+                                                                """));
             }
             else
             {
@@ -90,11 +109,17 @@ public class SessionSetter(Session session)
                 {
                     Session.Response.Headers.ContentEncoding = urlResponseFile.ContentEncoding;
                 }
+
                 Session.Response.Headers.ContentType = new Headers.ContentType()
                 {
                     MediaType = urlResponseFile.ContentType
                 };
                 Session.Response.Headers.ContentDisposition = urlResponseFile.ContentDisposition;
+                if (urlResponseFile.CacheControl != null)
+                {
+                    Session.Response.Headers.CacheControl = urlResponseFile.CacheControl;
+                }
+
                 if (urlResponseFile.FileEncoding == urlResponseFile.ContentEncoding)
                 {
                     //文件编码和内容编码一致，直接拷贝文件
@@ -120,7 +145,7 @@ public class SessionSetter(Session session)
                         using DeflateStream deflateStream = new(Session.Response.Body, CompressionMode.Compress);
                         await fileStream.CopyToAsync(deflateStream);
                     }
-                    else if (urlResponseFile.ContentEncoding==null||urlResponseFile.ContentEncoding.Trim()=="")
+                    else if (urlResponseFile.ContentEncoding == null || urlResponseFile.ContentEncoding.Trim() == "")
                     {
                         await fileStream.CopyToAsync(Session.Response.Body);
                     }
@@ -135,8 +160,10 @@ public class SessionSetter(Session session)
                 }
             }
         }
-        else if (resultValue is TextHtml urlResponseTextHtml)
+        else if (resultValue is TextHtml || nodeValue is TextHtml)
         {
+            var urlResponseTextHtml = nodeValue as TextHtml ??
+                                      resultValue as TextHtml ?? throw new NotImplementedException();
             var contentEncoding = urlResponseTextHtml.ContentEncoding ?? UrlResponse.DefaultContentEncoding;
             Session.Response.Headers.ContentEncoding = contentEncoding;
             Session.Response.Headers.ContentType = new Headers.ContentType()
@@ -164,8 +191,10 @@ public class SessionSetter(Session session)
                 await Session.Response.Body.WriteAsync(Util.UTF8.GetBytes(urlResponseTextHtml.Content));
             }
         }
-        else if (resultValue is ApplicationJson urlResponseJson)
+        else if (resultValue is ApplicationJson || nodeValue is ApplicationJson)
         {
+            var urlResponseJson = nodeValue as ApplicationJson ??
+                                  resultValue as ApplicationJson ?? throw new NotImplementedException();
             var contentEncoding = urlResponseJson.ContentEncoding ?? UrlResponse.DefaultContentEncoding;
             Session.Response.Headers.ContentEncoding = contentEncoding;
             Session.Response.Headers.ContentType = new Headers.ContentType()
@@ -174,12 +203,12 @@ public class SessionSetter(Session session)
             };
             if (Session.IsWebSocket)
             {
-
                 await urlRouter.Events.ResponseJsonGenerated(Session, urlResponseJson.Content);
                 if (Session.WebSocketResponse != null)
                 {
                     await Session.WebSocketResponse.SendMessage(urlResponseJson.Content.ToString());
                 }
+
                 urlResponseJson.Content.Dispose();
             }
             else
@@ -213,12 +242,15 @@ public class SessionSetter(Session session)
                 }
             }
         }
-        else if (resultValue is MultiplyStreamFile multiplyStreamFile)
+        else if (resultValue is MultiplyStreamFile || nodeValue is MultiplyStreamFile)
         {
+            var multiplyStreamFile = nodeValue as MultiplyStreamFile ??
+                                     resultValue as MultiplyStreamFile ?? throw new NotImplementedException();
             if (multiplyStreamFile.ContentEncoding != null)
             {
                 Session.Response.Headers.ContentEncoding = multiplyStreamFile.ContentEncoding;
             }
+
             Session.Response.Headers.ContentType = new Headers.ContentType()
             {
                 MediaType = multiplyStreamFile.ContentType
@@ -227,6 +259,7 @@ public class SessionSetter(Session session)
             {
                 Session.Response.Headers.CacheControl = multiplyStreamFile.CacheControl;
             }
+
             Session.Response.Headers.ContentDisposition = multiplyStreamFile.ContentDisposition;
             if (multiplyStreamFile.FileEncoding == multiplyStreamFile.ContentEncoding)
             {
@@ -283,8 +316,10 @@ public class SessionSetter(Session session)
                 throw new NotSupportedException("不支持的文件编码和内容编码组合");
             }
         }
-        else if (resultValue is NetMessageInterface netMessageInterface)
+        else if (resultValue is NetMessageInterface || nodeValue is NetMessageInterface)
         {
+            var netMessageInterface = nodeValue as NetMessageInterface ??
+                                      resultValue as NetMessageInterface ?? throw new NotImplementedException();
             Session.Response.Headers.ContentEncoding = UrlResponse.DefaultContentEncoding;
             Session.Response.Headers.ContentType = new Headers.ContentType()
             {
@@ -319,8 +354,9 @@ public class SessionSetter(Session session)
             }
         }
         else if (resultValue != null &&
-            resultValue?.GetType().FullName?.StartsWith("System.Runtime.CompilerServices.AsyncTaskMethodBuilder") == false &&
-            resultValue is not Task)
+                 resultValue.GetType().FullName?.StartsWith("System.Runtime.CompilerServices.AsyncTaskMethodBuilder") ==
+                 false &&
+                 resultValue is not Task)
         {
             Session.Response.Headers.ContentEncoding = UrlResponse.DefaultContentEncoding;
             Session.Response.Headers.ContentType = new Headers.ContentType()
@@ -399,6 +435,7 @@ public class SessionSetter(Session session)
                 }
             }
         }
+
         return true;
     }
 }

@@ -1,4 +1,5 @@
-﻿using TidyHPC.LiteJson;
+﻿using System.Net.Http.Headers;
+using TidyHPC.LiteJson;
 
 namespace TidyHPC.Routers.Urls;
 
@@ -74,6 +75,16 @@ public static class UrlResponseFactory
     /// 创建附件响应
     /// </summary>
     /// <param name="filePath"></param>
+    /// <returns></returns>
+    public static Responses.Attachment CreateAttachmentByFilePath(string filePath)
+    {
+        return new Responses.Attachment(filePath);
+    }
+
+    /// <summary>
+    /// 创建附件响应
+    /// </summary>
+    /// <param name="filePath"></param>
     /// <param name="fileName"></param>
     /// <param name="relativeFilePath"></param>
     /// <returns></returns>
@@ -92,7 +103,24 @@ public static class UrlResponseFactory
     /// <returns></returns>
     public static Responses.Attachment CreateAttachment(string filePath, string fileName, string relativeFilePath, string contentEncoding)
     {
-        return new Responses.Attachment(filePath, fileName, relativeFilePath, contentEncoding);
+        return new Responses.Attachment(filePath, fileName, relativeFilePath, contentEncoding, null);
+    }
+
+    /// <summary>
+    /// 创建附件响应，使用缓存控制
+    /// </summary>
+    /// <param name="filePath"></param>
+    /// <param name="fileName"></param>
+    /// <param name="relativeFilePath"></param>
+    /// <param name="maxAge"></param>
+    /// <returns></returns>
+    public static Responses.Attachment CreateAttachmentWithMaxAge(string filePath, string fileName, string relativeFilePath, int maxAge)
+    {
+        var cacheControl = new CacheControlHeaderValue
+        {
+            MaxAge = TimeSpan.FromSeconds(maxAge)
+        };
+        return new Responses.Attachment(filePath, fileName, relativeFilePath, Responses.UrlResponse.DefaultContentEncoding, cacheControl);
     }
 
     /// <summary>
