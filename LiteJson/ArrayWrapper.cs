@@ -588,6 +588,58 @@ public struct ArrayWrapper(object? target) : IDisposable, IEnumerable<object?>
         return result;
     }
 
+    public int FindLastIndex(Func<Json, bool> onItem)
+    {
+        if (Target is null) return -1;
+        if (Target is List<object?> listObjects)
+        {
+            return listObjects.FindLastIndex(item=>onItem(new Json(item)));
+        }
+        else if (Target is IList list)
+        {
+            int count = list.Count;
+            for (int index = count - 1; index >= 0; index--)
+            {
+                if (onItem(new Json(list[index]))) return index;
+            }
+        }
+        else if (Target is Array array)
+        {
+            int count = array.Length;
+            for (int index = count - 1; index >= 0; index--)
+            {
+                if (onItem(new Json(array.GetValue(index)))) return index;
+            }
+        }
+        else if (Target is JsonArray jsonArray)
+        {
+            int count = jsonArray.Count;
+            for (int index = count - 1; index >= 0; index--)
+            {
+                if (onItem(new Json(jsonArray[index]))) return index;
+            }
+        }
+        else if (Target is JsonElement jsonElement)
+        {
+            int count = jsonElement.GetArrayLength();
+            for (int index = count - 1; index >= 0; index--)
+            {
+                if (onItem(new Json(jsonElement[index]))) return index;
+            }
+        }
+        else if (Target.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>)))
+        {
+            var countMethod = Target.GetType().GetMethod("Count") ?? throw new Exception("Error code");
+            var itemMethod = Target.GetType().GetMethod("Item") ?? throw new Exception("Error code");
+            int count = (int)countMethod.Invoke(Target, [])!;
+            for (int index = count - 1; index >= 0; index--)
+            {
+                if (onItem(new Json(itemMethod.Invoke(Target, [index])!))) return index;
+            }
+        }
+        return -1;
+    }
+    
     /// <summary>
     /// Implicit convert json to array wrapper
     /// </summary>

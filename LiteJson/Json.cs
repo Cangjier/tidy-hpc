@@ -112,6 +112,18 @@ public readonly partial struct Json : IDisposable, IEnumerable<Json>, IEquatable
         }
     }
 
+    public Json DeepClone()
+    {
+        if (Node is JsonNode jsonNode)
+        {
+            return jsonNode.DeepClone();
+        }
+        else
+        {
+            return Parse(ToString(false));
+        }
+    }
+    
     /// <summary>
     /// Clear children
     /// </summary>

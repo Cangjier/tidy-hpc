@@ -292,6 +292,29 @@ public partial struct Json
     public readonly long AsInt64 => As<Int64>();
 
     /// <summary>
+    /// Convert to Int64
+    /// </summary>
+    public readonly long ToInt64
+    {
+        get
+        {
+            if (IsString)
+            {
+                return long.Parse(AsString);
+            }
+            else if (IsInt64) return AsInt64;
+            else if (IsNumber)
+            {
+                return (long)AsNumber;
+            }
+            else
+            {
+                throw new Exception("Can't convert to Int64");
+            }
+        }
+    }
+
+    /// <summary>
     /// Is Float
     /// </summary>
     public readonly bool IsFloat => Is<float>();

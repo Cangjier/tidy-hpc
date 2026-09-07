@@ -536,6 +536,18 @@ public partial struct Json
         return -1;
     }
 
+    public int FindLastIndex(Func<Json, bool> onItem)
+    {
+        if (IsArray)
+        {
+            return AsArray.FindLastIndex(onItem);
+        }
+        else
+        {
+            throw new Exception($"Unsupported type:{GetValueKind()}");
+        }
+    }
+    
     /// <summary>
     /// 比较
     /// </summary>
