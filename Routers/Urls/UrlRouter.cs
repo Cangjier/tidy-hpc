@@ -624,10 +624,6 @@ public class UrlRouter
 
             await session.CompleteAsync(async () =>
             {
-                if(session.Request.Url.PathAndQuery.Contains("login"))
-                {
-
-                }
                 if (methodReturnTypeIsTask)
                 {
                     var resultValue = taskResultProperty?.GetValue(result);
